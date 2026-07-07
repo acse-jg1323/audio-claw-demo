@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>双路音频采集验证 · 系统声 + 麦克风</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --card: #1a1d24;
+      --border: #2a2f3a;
+      --text: #e6e8ec;
+      --text-dim: #9aa3b2;
+      --mic: #3b82f6;
+      --sys: #10b981;
+      --danger: #ef4444;
+      --warn: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px 20px;
+      line-height: 1.6;
+    }
+    .wrap { max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 20px; margin-bottom: 4px; }
+    .sub { color: var(--text-dim); font-size: 13px; margin-bottom: 24px; }
+    .steps {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+    .steps b { color: var(--warn); }
+    .steps ol { padding-left: 20px; }
+    .steps li { margin: 4px 0; }
+    .controls { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    button {
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    button:hover:not(:disabled) { border-color: #3a4150; background: #20242d; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    button.primary { background: var(--mic); border-color: var(--mic); color: #fff; }
+    button.sys { background: var(--sys); border-color: var(--sys); color: #fff; }
+    button.stop { background: var(--danger); border-color: var(--danger); color: #fff; }
+
+    .meter-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 14px;
+    }
+    .meter-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .meter-title { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--text-dim); }
+    .meter-title.mic .dot { background: var(--mic); }
+    .meter-title.sys .dot { background: var(--sys); }
+    .meter-state { font-size: 12px; color: var(--text-dim); }
+    .bar-track {
+      height: 32px;
+      background: #0b0d11;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+    .bar-num {
+      position: absolute;
+      right: 10px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      color: #fff;
+      z-index: 2;
+      text-shadow: 0 1px 2px rgba(0,0,0,.6);
+    }
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 6px;
+      transition: width .06s linear;
+    }
+    .mic .bar-fill { background: linear-gradient(90deg, #60a5fa, #93c5fd); }
+    .sys .bar-fill { background: linear-gradient(90deg, #34d399, #6ee7b7); }
+    .peak {
+      font-size: 11px; color: var(--text-dim); margin-top: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+    .verdict {
+      margin-top: 20px;
+      padding: 14px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text-dim);
+      white-space: pre-wrap;
+    }
+    .log {
+      margin-top: 20px;
+      font-size: 12px;
+      font-family: "Cascadia Code", Consolas, monospace;
+      background: #0b0d11;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      max-height: 180px;
+      overflow-y: auto;
+      color: var(--text-dim);
+      white-space: pre-wrap;
+    }
+    .log .err { color: var(--danger); }
+    .log .ok { color: var(--sys); }
+    .log .warn { color: var(--warn); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>双路音频采集验证</h1>
+    <div class="sub">验证 Windows Chrome 能否同时抓到「系统声音」和「麦克风」两路独立音频。不接入会议，纯本地测试。</div>
+
+    <div class="steps">
+      <ol>
+        <li>点「开启麦克风」，允许麦克风权限，对着麦说话，看蓝色条是否跳动。</li>
+        <li>点「开启系统声音」，在弹窗里<b>选择「整个屏幕」或某个标签页</b>，并<b>务必勾选左下角「分享系统音频 / Share system audio」</b>。</li>
+        <li>播放一段有声音的视频/音乐，看绿色条是否跳动。</li>
+        <li>两条<b>各自独立跳动</b> = 双路可行；绿色条始终不动 = 系统声没抓到（多半是没勾选系统音频，或共享了单个窗口）。</li>
+      </ol>
+    </div>
+
+    <div class="controls">
+      <button id="btnMic" class="primary">开启麦克风</button>
+      <button id="btnSys" class="sys">开启系统声音</button>
+      <button id="btnStop" class="stop" disabled>全部停止</button>
+    </div>
+
+    <div class="meter-card">
+      <div class="meter-head">
+        <div class="meter-title mic"><span class="dot"></span>麦克风（getUserMedia）</div>
+        <div class="meter-state" id="micState">未开启</div>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="micBar"></div><span class="bar-num" id="micNum">0%</span></div>
+      <div class="peak" id="micPeak">峰值 0.00</div>
+    </div>
+
+    <div class="meter-card">
+      <div class="meter-head">
+        <div class="meter-title sys"><span class="dot"></span>系统声音（getDisplayMedia）</div>
+        <div class="meter-state" id="sysState">未开启</div>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="sysBar"></div><span class="bar-num" id="sysNum">0%</span></div>
+      <div class="peak" id="sysPeak">峰值 0.00</div>
+    </div>
+
+    <div class="verdict" id="verdict">等待测试…</div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <script type="module">
+    const els = {
+      btnMic: document.getElementById("btnMic"),
+      btnSys: document.getElementById("btnSys"),
+      btnStop: document.getElementById("btnStop"),
+      micBar: document.getElementById("micBar"),
+      sysBar: document.getElementById("sysBar"),
+      micNum: document.getElementById("micNum"),
+      sysNum: document.getElementById("sysNum"),
+      micState: document.getElementById("micState"),
+      sysState: document.getElementById("sysState"),
+      micPeak: document.getElementById("micPeak"),
+      sysPeak: document.getElementById("sysPeak"),
+      verdict: document.getElementById("verdict"),
+      log: document.getElementById("log"),
+    };
+
+    let audioCtx = null;
+    const tracks = { mic: null, sys: null };
+    const analysers = { mic: null, sys: null };
+    const streams = { mic: null, sys: null };
+    const peaks = { mic: 0, sys: 0 };
+    const everActive = { mic: false, sys: false };
+    let rafId = null;
+
+    function log(msg, cls = "") {
+      const time = new Date().toLocaleTimeString("zh-CN", { hour12: false });
+      const line = document.createElement("div");
+      if (cls) line.className = cls;
+      line.textContent = `[${time}] ${msg}`;
+      els.log.appendChild(line);
+      els.log.scrollTop = els.log.scrollHeight;
+    }
+
+    async function ensureCtx() {
+      if (!audioCtx) {
+        const Ctor = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new Ctor();
+        log(`AudioContext 采样率 ${audioCtx.sampleRate}Hz`);
+      }
+      if (audioCtx.state === "suspended") {
+        try { await audioCtx.resume(); } catch {}
+        log(`AudioContext resume → ${audioCtx.state}`);
+      }
+      return audioCtx;
+    }
+
+    async function attachAnalyser(which, stream) {
+      const ctx = await ensureCtx();
+      const src = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.4;
+      src.connect(analyser);
+      // 关键：source 必须连到 destination 音频图才会被拉动，analyser 才有数据。
+      // 用 gain=0 的静音节点接到扬声器，既能驱动图、又不会回灌出声/啸叫。
+      const muteGain = ctx.createGain();
+      muteGain.gain.value = 0;
+      analyser.connect(muteGain);
+      muteGain.connect(ctx.destination);
+      analysers[which] = analyser;
+      log(`${which} analyser 已挂载，ctx.state=${ctx.state}`);
+    }
+
+    function rmsDetailed(analyser) {
+      const buf = new Float32Array(analyser.fftSize);
+      analyser.getFloatTimeDomainData(buf);
+      let sum = 0, mn = Infinity, mx = -Infinity;
+      for (let i = 0; i < buf.length; i++) {
+        const v = buf[i];
+        sum += v * v;
+        if (v < mn) mn = v;
+        if (v > mx) mx = v;
+      }
+      return { rms: Math.sqrt(sum / buf.length), min: mn, max: mx };
+    }
+
+    let lastDiagAt = 0;
+    function loop() {
+      const now = performance.now();
+      const doDiag = now - lastDiagAt > 1000;
+      for (const which of ["mic", "sys"]) {
+        const analyser = analysers[which];
+        if (!analyser) continue;
+        const d = rmsDetailed(analyser);
+        // 人声/系统声 rms 多在 0.01~0.1 量级，用 sqrt 做非线性放大让小信号也有明显视觉响应
+        const level = Math.min(1, Math.sqrt(d.rms) * 2.2);
+        const bar = which === "mic" ? els.micBar : els.sysBar;
+        const peakEl = which === "mic" ? els.micPeak : els.sysPeak;
+        bar.style.width = `${(level * 100).toFixed(1)}%`;
+        const numEl = which === "mic" ? els.micNum : els.sysNum;
+        if (numEl) numEl.textContent = `${Math.round(level * 100)}%`;
+        if (level > peaks[which]) {
+          peaks[which] = level;
+          peakEl.textContent = `峰值 ${level.toFixed(2)}`;
+        }
+        if (level > 0.02) everActive[which] = true;
+        if (doDiag) {
+          const tr = tracks[which];
+          log(
+            `${which} 原始: rms=${d.rms.toFixed(5)} level=${level.toFixed(3)} ` +
+            `| bar存在=${Boolean(bar)} 写入width=${bar?.style.width} 实际宽=${bar?.offsetWidth}px ` +
+            `| track muted=${tr?.muted} ready=${tr?.readyState}`
+          );
+        }
+      }
+      if (doDiag) lastDiagAt = now;
+      updateVerdict();
+      rafId = requestAnimationFrame(loop);
+    }
+
+    function startLoop() {
+      if (!rafId) rafId = requestAnimationFrame(loop);
+    }
+
+    function updateVerdict() {
+      const micOn = Boolean(streams.mic);
+      const sysOn = Boolean(streams.sys);
+      if (!micOn && !sysOn) { els.verdict.textContent = "等待测试…"; return; }
+      const lines = [];
+      lines.push(`麦克风：${micOn ? (everActive.mic ? "✓ 有信号" : "已开启，等待说话…") : "未开启"}`);
+      lines.push(`系统声：${sysOn ? (everActive.sys ? "✓ 有信号" : "已开启，等待播放声音…") : "未开启"}`);
+      if (micOn && sysOn && everActive.mic && everActive.sys) {
+        lines.push("");
+        lines.push("结论：双路独立采集可行 ✓ —— 两路都拿到了独立信号，可以正式接入双路 ASR。");
+      } else if (sysOn && !everActive.sys) {
+        lines.push("");
+        lines.push("提示：系统声那路还没有信号。请确认弹窗里勾选了「分享系统音频」，并共享了「整个屏幕」或标签页（共享单个窗口通常没有声音），然后播放一段声音。");
+      }
+      els.verdict.textContent = lines.join("\n");
+    }
+
+    async function startMic() {
+      try {
+        els.btnMic.disabled = true;
+        log("请求麦克风权限…");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          video: false,
+        });
+        streams.mic = stream;
+        tracks.mic = stream.getAudioTracks()[0];
+        attachAnalyser("mic", stream).then(startLoop);
+        els.micState.textContent = "采集中";
+        els.btnStop.disabled = false;
+        log(`麦克风已开启：${tracks.mic?.label || "默认设备"}`, "ok");
+        tracks.mic?.addEventListener("ended", () => { log("麦克风轨道结束。", "warn"); stopOne("mic"); });
+        startLoop();
+      } catch (e) {
+        els.btnMic.disabled = false;
+        els.micState.textContent = "失败";
+        log(`麦克风开启失败：${e?.name || ""} ${e?.message || e}`, "err");
+      }
+    }
+
+    async function startSys() {
+      try {
+        els.btnSys.disabled = true;
+        log("请求屏幕共享（用于抓系统声音）…");
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,           // getDisplayMedia 必须带 video，否则部分浏览器报错
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          },
+        });
+        const audioTracks = stream.getAudioTracks();
+        if (!audioTracks.length) {
+          stream.getTracks().forEach((t) => t.stop());
+          els.btnSys.disabled = false;
+          els.sysState.textContent = "无音频轨";
+          log("共享成功，但没有音频轨道 —— 多半是没勾选「分享系统音频」，或共享了单个窗口。请重试并勾选系统音频。", "err");
+          return;
+        }
+        streams.sys = stream;
+        tracks.sys = audioTracks[0];
+        attachAnalyser("sys", stream).then(startLoop);
+        els.sysState.textContent = "采集中";
+        els.btnStop.disabled = false;
+        log(`系统声音已开启：${tracks.sys?.label || "系统音频"}（音频轨 ${audioTracks.length} 条）`, "ok");
+        // 用户在浏览器原生「停止共享」栏点停止时
+        tracks.sys?.addEventListener("ended", () => { log("系统声音共享已停止。", "warn"); stopOne("sys"); });
+        startLoop();
+      } catch (e) {
+        els.btnSys.disabled = false;
+        els.sysState.textContent = "失败";
+        if (e?.name === "NotAllowedError") {
+          log("已取消屏幕共享（或被拒绝）。", "warn");
+        } else {
+          log(`系统声音开启失败：${e?.name || ""} ${e?.message || e}`, "err");
+        }
+      }
+    }
+
+    function stopOne(which) {
+      if (streams[which]) {
+        streams[which].getTracks().forEach((t) => t.stop());
+        streams[which] = null;
+      }
+      analysers[which] = null;
+      tracks[which] = null;
+      if (which === "mic") {
+        els.micState.textContent = "已停止";
+        els.micBar.style.width = "0%";
+        els.btnMic.disabled = false;
+      } else {
+        els.sysState.textContent = "已停止";
+        els.sysBar.style.width = "0%";
+        els.btnSys.disabled = false;
+      }
+      if (!streams.mic && !streams.sys) {
+        els.btnStop.disabled = true;
+        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      }
+    }
+
+    function stopAll() {
+      stopOne("mic");
+      stopOne("sys");
+      log("已全部停止。");
+    }
+
+    els.btnMic.addEventListener("click", startMic);
+    els.btnSys.addEventListener("click", startSys);
+    els.btnStop.addEventListener("click", stopAll);
+
+    log("页面就绪。建议用 Chrome / Edge 打开。");
+  </script>
+</body>
+</html>

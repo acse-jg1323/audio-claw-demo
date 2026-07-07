@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASR WebSocket 验证</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --line: #e5e7eb;
+      --text: #111827;
+      --sub: #6b7280;
+      --blue: #2563eb;
+      --green: #10b981;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 20px 40px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .lead {
+      margin: 0 0 24px;
+      color: var(--sub);
+      line-height: 1.6;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: 0 8px 24px rgba(17, 24, 39, 0.04);
+    }
+
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 16px;
+    }
+
+    .field {
+      margin-bottom: 14px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: var(--sub);
+      font-weight: 600;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font: inherit;
+      background: #fff;
+    }
+
+    .field textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .hint {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--sub);
+      line-height: 1.5;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .secondary {
+      background: #eef2ff;
+      color: var(--blue);
+    }
+
+    .danger {
+      background: #fef2f2;
+      color: var(--red);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .status-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      background: #eef2ff;
+      color: var(--blue);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .status-idle { color: var(--sub); background: #f3f4f6; }
+    .status-connecting { color: var(--yellow); background: #fffbeb; }
+    .status-connected { color: var(--blue); background: #eff6ff; }
+    .status-transcribing { color: var(--green); background: #ecfdf5; }
+    .status-finished { color: var(--green); background: #ecfdf5; }
+    .status-error { color: var(--red); background: #fef2f2; }
+
+    .result-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 560px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .result-item {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: #fff;
+    }
+
+    .result-meta {
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: var(--sub);
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .result-text {
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+
+    .translation {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--line);
+      color: #374151;
+    }
+
+    .log-box {
+      min-height: 180px;
+      background: #111827;
+      color: #d1fae5;
+      border-radius: 12px;
+      padding: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      overflow: auto;
+    }
+
+    .empty {
+      color: var(--sub);
+      font-size: 13px;
+      padding: 14px 0;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>ASR WebSocket 验证页</h1>
+    <p class="lead">
+      当前页面用于完成第一步 ASR 接口验证：确认麦克风采集、WebSocket 直连鉴权、
+      `task_start / result_final / task_finish` 流程，以及返回字段结构。
+    </p>
+
+    <div class="layout">
+      <section class="card">
+        <h2>联调配置</h2>
+
+        <div class="field">
+          <label for="apiKey">SenseAudio API Key</label>
+          <input id="apiKey" type="text" placeholder="本地临时输入，不写入代码">
+          <div class="hint">浏览器 WebSocket 无法自定义 Authorization 头，当前验证页使用 URL 参数方式传入鉴权值。</div>
+        </div>
+
+        <div class="field">
+          <label for="targetLanguage">目标语言</label>
+          <select id="targetLanguage">
+            <option value="">不翻译</option>
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="vadSetting">VAD 配置</label>
+          <textarea id="vadSetting">{
+  "silence_duration": 500,
+  "min_speech_duration": 300
+}</textarea>
+          <div class="hint">第一版先使用保守配置，后面再根据停顿体验微调。</div>
+        </div>
+
+        <div class="button-row">
+          <button class="primary" id="startBtn">开始验证</button>
+          <button class="danger" id="stopBtn" disabled>结束验证</button>
+          <button class="secondary" id="clearBtn">清空结果</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="status-line">
+          <div class="badge status-idle" id="statusBadge">
+            <span class="dot"></span>
+            <span id="statusText">未开始</span>
+          </div>
+          <span id="sessionInfo" class="hint"></span>
+        </div>
+
+        <h2>实时结果</h2>
+        <div class="result-list" id="resultList">
+          <div class="empty">点击“开始验证”后，麦克风音频会被转换为 16k 单声道 PCM 并发送到 SenseAudio WebSocket。</div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card" style="margin-top: 20px;">
+      <h2>调试日志</h2>
+      <div class="log-box" id="logBox">等待开始验证...</div>
+    </section>
+  </div>
+
+  <script type="module" src="./src/asr/asr-websocket-validate.js"></script>
+</body>
+</html>

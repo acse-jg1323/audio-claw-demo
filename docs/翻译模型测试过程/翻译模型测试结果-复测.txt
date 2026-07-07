@@ -1,0 +1,146 @@
+
+===== senseaudio-s2-flash =====
+
+[case-01] 中文 -> 日语 / 技术术语
+耗时: 444 ms
+原文: 这个 API 先走 websocket，后面再补 token 的鉴权层。
+译文: このAPIはまずWebSocketで実装し、後からトークンの認証レイヤーを追加します。
+
+[case-02] 中文 -> 英文 / 产品逻辑
+耗时: 21943 ms
+原文: 这一版先保证原文稳定展示，译文异步补上就可以。
+译文: For this version, just ensure the original text displays stably first; the translation can be loaded asynchronously.
+
+[case-03] 中文口语 -> 日语
+耗时: 327 ms
+原文: 对，就先这么搞，后面我们再慢慢收。
+译文: はい、まずはこの方針で進めましょう。後ほど徐々に整理していきます。
+
+[case-04] 日语 -> 中文 / 产品推进
+耗时: 23690 ms
+原文: まず会議中のリアルタイム翻訳だけ安定させれば十分です。
+译文: 先把会议中的实时翻译稳定下来就足够了。
+
+[case-05] 日语 -> 中文 / 术语库
+耗时: 22194 ms
+原文: 専門用語については、企業ごとの用語集をあとから差し込めるようにしたいです。
+译文: 关于专业术语，希望能支持后续插入各企业的术语表。
+
+[case-06] 英文 -> 中文 / 实时显示
+耗时: 14575 ms
+原文: We should keep the original transcript first and append the translated segment asynchronously.
+译文: 我们应该先保留原始转录文本，并异步追加翻译片段。
+
+[case-07] 英文 -> 中文 / 技术表达
+耗时: 17366 ms
+原文: Please preserve product names, API terms, and websocket related wording in the translated output.
+译文: 请在翻译结果中保留产品名称、API 术语以及 websocket 相关表述。
+
+[case-08] 中文夹英文术语 -> 日语
+耗时: 368 ms
+原文: 这条消息先不要走 summary，只走 segment 翻译和 UI append。
+译文: このメッセージはまず summary を経由せず、segment 翻訳と UI append のみを行います。
+
+[case-09] 日文夹英文产品名 -> 中文
+耗时: 27750 ms
+原文: AudioClaw の meeting page は、まず original transcript を先に表示したいです。
+译文: AudioClaw 的 meeting page 希望首先显示 original transcript。
+
+===== senseaudio-s2-lite =====
+
+[case-01] 中文 -> 日语 / 技术术语
+耗时: 384 ms
+原文: 这个 API 先走 websocket，后面再补 token 的鉴权层。
+译文: この API はまず WebSocket を経由し、後でトークンの認証層を追加します。
+
+[case-02] 中文 -> 英文 / 产品逻辑
+耗时: 286 ms
+原文: 这一版先保证原文稳定展示，译文异步补上就可以。
+译文: For this version, just ensure the original text is displayed stably; the translation can be filled in asynchronously.
+
+[case-03] 中文口语 -> 日语
+耗时: 252 ms
+原文: 对，就先这么搞，后面我们再慢慢收。
+译文: はい、まずはこれで進めましょう。後でゆっくりと整えていきます。
+
+[case-04] 日语 -> 中文 / 产品推进
+耗时: 243 ms
+原文: まず会議中のリアルタイム翻訳だけ安定させれば十分です。
+译文: 首先，只需确保会议中的实时翻译稳定即可。
+
+[case-05] 日语 -> 中文 / 术语库
+耗时: 240 ms
+原文: 専門用語については、企業ごとの用語集をあとから差し込めるようにしたいです。
+译文: 关于专业术语，我们希望能够在后期插入各企业的术语表。
+
+[case-06] 英文 -> 中文 / 实时显示
+耗时: 237 ms
+原文: We should keep the original transcript first and append the translated segment asynchronously.
+译文: 我们应该先保留原始转录内容，然后异步追加翻译片段。
+
+[case-07] 英文 -> 中文 / 技术表达
+耗时: 258 ms
+原文: Please preserve product names, API terms, and websocket related wording in the translated output.
+译文: 请在翻译输出中保留产品名称、API 术语和 websocket 相关用语。
+
+[case-08] 中文夹英文术语 -> 日语
+耗时: 331 ms
+原文: 这条消息先不要走 summary，只走 segment 翻译和 UI append。
+译文: このメッセージは一旦サマリーを通さず、セグメント翻訳とUIの追加のみを行う。
+
+[case-09] 日文夹英文产品名 -> 中文
+耗时: 282 ms
+原文: AudioClaw の meeting page は、まず original transcript を先に表示したいです。
+译文: AudioClaw 的会议页面，首先希望显示原始转录内容。
+
+===== senseaudio-s2 =====
+
+[case-01] 中文 -> 日语 / 技术术语
+耗时: 3191 ms
+原文: 这个 API 先走 websocket，后面再补 token 的鉴权层。
+译文: この API はまず websocket で進めて、後で token の認証レイヤーを追加します。
+
+[case-02] 中文 -> 英文 / 产品逻辑
+耗时: 3352 ms
+原文: 这一版先保证原文稳定展示，译文异步补上就可以。
+译文: For this version, just ensure the original text is displayed stably first, and the translation can be filled in asynchronously.
+
+[case-03] 中文口语 -> 日语
+耗时: 2599 ms
+原文: 对，就先这么搞，后面我们再慢慢收。
+译文: はい、まずはこう進めて、後でまた徐々に詰めていきましょう。
+
+[case-04] 日语 -> 中文 / 产品推进
+耗时: 3047 ms
+原文: まず会議中のリアルタイム翻訳だけ安定させれば十分です。
+译文: 先把会议中的实时翻译稳定下来就足够了。
+
+[case-05] 日语 -> 中文 / 术语库
+耗时: 2484 ms
+原文: 専門用語については、企業ごとの用語集をあとから差し込めるようにしたいです。
+译文: 关于专业术语，希望之后能够插入各企业各自的术语表。
+
+[case-06] 英文 -> 中文 / 实时显示
+耗时: 3108 ms
+原文: We should keep the original transcript first and append the translated segment asynchronously.
+译文: 我们应该先保留原始转录内容，再异步追加翻译后的片段。
+
+[case-07] 英文 -> 中文 / 技术表达
+耗时: 3491 ms
+原文: Please preserve product names, API terms, and websocket related wording in the translated output.
+译文: 请在翻译输出中保留产品名称、API 术语以及 websocket 相关措辞。
+
+[case-08] 中文夹英文术语 -> 日语
+耗时: 3646 ms
+原文: 这条消息先不要走 summary，只走 segment 翻译和 UI append。
+译文: このメッセージはまだ summary に流さず、segment 翻訳と UI append だけにしてください。
+
+[case-09] 日文夹英文产品名 -> 中文
+耗时: 2867 ms
+原文: AudioClaw の meeting page は、まず original transcript を先に表示したいです。
+译文: AudioClaw 的 meeting page，我想先显示 original transcript。
+
+===== 汇总 =====
+senseaudio-s2-flash | 平均延迟 14295 ms | 成功 9/9
+senseaudio-s2-lite | 平均延迟 279 ms | 成功 9/9
+senseaudio-s2 | 平均延迟 3087 ms | 成功 9/9

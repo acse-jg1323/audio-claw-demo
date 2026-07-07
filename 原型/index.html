@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AudioClaw · AI 会议翻译系统</title>
+  <style>
+    /* ============ 设计令牌 ============ */
+    :root {
+      --bg-app: #F7F7F8;
+      --bg-card: #FFFFFF;
+      --bg-elevated: #FFFFFF;
+      --bg-subtle: #F2F3F5;
+      --bg-hover: #F0F1F3;
+
+      --border-default: #E5E7EB;
+      --border-strong: #D1D5DB;
+      --border-subtle: #F0F1F3;
+
+      --text-primary: #111827;
+      --text-secondary: #4B5563;
+      --text-tertiary: #9CA3AF;
+      --text-on-accent: #FFFFFF;
+
+      --accent-primary: #2563EB;
+      --accent-primary-hover: #1D4ED8;
+      --accent-soft: #EFF6FF;
+
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+
+      /* 说话人色 */
+      --speaker-1: #3B82F6;   /* 李明 - 销售总监 */
+      --speaker-2: #8B5CF6;   /* 田中健太 - 客户CTO */
+      --speaker-3: #10B981;   /* 王芳 - 产品经理 */
+      --speaker-4: #F59E0B;   /* 佐藤美咲 - 客户产品总监 */
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 20px;
+
+      --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04);
+      --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
+      --shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.12);
+      --shadow-float: 0 16px 48px rgba(16, 24, 40, 0.22);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+        "PingFang SC", "Hiragino Sans GB", "Hiragino Sans", "Yu Gothic", "Microsoft YaHei",
+        "Noto Sans CJK SC", "Noto Sans JP", sans-serif;
+      font-size: 14px;
+      color: var(--text-primary);
+      background: var(--bg-app);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    button { font-family: inherit; }
+
+    /* ============ 整体布局 ============ */
+    .app {
+      display: grid;
+      grid-template-rows: 56px 1fr 36px;
+      height: 100vh;
+    }
+
+    /* ============ 顶栏 ============ */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border-default);
+      gap: 16px;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .brand-logo {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #2563EB 0%, #8B5CF6 100%);
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .top-divider {
+      width: 1px; height: 20px;
+      background: var(--border-default);
+    }
+
+    .recording-status {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 12px;
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--danger);
+    }
+    .recording-dot {
+      width: 8px; height: 8px;
+      background: var(--danger);
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .meeting-title {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      flex: 1;
+    }
+    .meeting-title-main {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .meeting-title-sub {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-strong);
+    }
+    .btn.primary {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: white;
+    }
+    .btn.primary:hover {
+      background: var(--accent-primary-hover);
+    }
+    .btn.icon { padding: 7px 9px; }
+    .btn.danger {
+      background: var(--bg-card);
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+    .btn.danger:hover {
+      background: rgba(239, 68, 68, 0.08);
+    }
+    .btn.active {
+      background: var(--accent-soft);
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+    }
+
+    .lang-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px 4px 4px;
+      background: var(--bg-subtle);
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .lang-switch:hover { border-color: var(--border-default); }
+    .lang-flag {
+      display: inline-flex;
+      align-items: center; justify-content: center;
+      width: 22px; height: 22px;
+      background: white;
+      border-radius: 999px;
+      font-size: 13px;
+    }
+
+    .avatar {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* ============ 主体布局 ============ */
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      overflow: hidden;
+      background: var(--bg-app);
+    }
+    .main.drawer-closed {
+      grid-template-columns: 1fr 56px;
+    }
+
+    /* ============ 工作区 ============ */
+    .work-area {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 12px 12px 12px 16px;
+    }
+
+    .tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
+      background: var(--bg-subtle);
+      border-radius: 10px;
+      width: fit-content;
+      margin-bottom: 12px;
+    }
+    .tab {
+      padding: 7px 16px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-weight: 500;
+      border: none;
+      background: transparent;
+    }
+    .tab.active {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+    .tab:hover:not(.active) {
+      color: var(--text-primary);
+    }
+
+    .tab-content {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      display: none;
+    }
+    .tab-content.active { display: block; }
+
+    /* 滚动条 */
+    .tab-content::-webkit-scrollbar,
+    .ai-drawer-body::-webkit-scrollbar { width: 6px; }
+    .tab-content::-webkit-scrollbar-thumb,
+    .ai-drawer-body::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 999px; }
+
+    /* ============ Tab 1: 实时转写流 ============ */
+    .transcript-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border-default);
+      position: sticky;
+      top: 0;
+      background: var(--bg-card);
+      z-index: 2;
+    }
+    .speaker-legend {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+    }
+    .transcript-meta {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+
+    .bubbles {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .bubble {
+      display: flex;
+      gap: 12px;
+      max-width: 88%;
+    }
+    .bubble-avatar {
+      flex-shrink: 0;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    .bubble-body { flex: 1; min-width: 0; }
+    .bubble-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .bubble-name {
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .bubble-role {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      padding: 1px 6px;
+      background: var(--bg-subtle);
+      border-radius: 4px;
+    }
+    .bubble-time {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      font-variant-numeric: tabular-nums;
+    }
+    .bubble-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .bubble:hover .bubble-actions { opacity: 1; }
+    .bubble-action {
+      width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 4px;
+      cursor: pointer;
+      color: var(--text-tertiary);
+      background: transparent;
+      border: none;
+    }
+    .bubble-action:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .bubble-action.starred { color: var(--warning); }
+    .bubble-text {
+      padding: 10px 14px;
+      background: var(--bg-subtle);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-primary);
+    }
+    .bubble-translation {
+      margin-top: 4px;
+      padding: 8px 14px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+      border-left: 2px solid var(--border-default);
+      margin-left: 6px;
+      font-style: normal;
+    }
+
+    /* 不同说话人变种 */
+    .bubble.spk-1 .bubble-avatar { background: var(--speaker-1); }
+    .bubble.spk-2 .bubble-avatar { background: var(--speaker-2); }
+    .bubble.spk-3 .bubble-avatar { background: var(--speaker-3); }
+    .bubble.spk-4 .bubble-avatar { background: var(--speaker-4); }
+
+    .bubble.spk-1 .bubble-translation { border-left-color: var(--speaker-1); }
+    .bubble.spk-2 .bubble-translation { border-left-color: var(--speaker-2); }
+    .bubble.spk-3 .bubble-translation { border-left-color: var(--speaker-3); }
+    .bubble.spk-4 .bubble-translation { border-left-color: var(--speaker-4); }
+
+    /* 正在识别中 */
+    .bubble.live .bubble-text {
+      background: var(--accent-soft);
+      position: relative;
+    }
+    .bubble.live .bubble-text::after {
+      content: '';
+      display: inline-block;
+      width: 8px; height: 14px;
+      background: var(--accent-primary);
+      margin-left: 3px;
+      animation: blink 0.8s infinite;
+      vertical-align: middle;
+    }
+    @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+
+    .low-confidence {
+      color: var(--text-tertiary);
+      border-bottom: 1px dotted var(--text-tertiary);
+    }
+
+
+    .todo-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    .todo-checkbox {
+      width: 16px; height: 16px;
+      border: 1.5px solid var(--border-strong);
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      cursor: pointer;
+    }
+    .todo-body { flex: 1; }
+    .todo-text { font-size: 13px; line-height: 1.5; }
+    .todo-meta {
+      display: flex;
+      gap: 10px;
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--text-tertiary);
+    }
+    .owner-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px 2px 4px;
+      background: var(--bg-subtle);
+      border-radius: 999px;
+    }
+    .owner-avatar {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px;
+      color: white;
+      font-weight: 600;
+    }
+
+    /* ============ Tab 2: 会议总结 ============ */
+    .summary-page {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+    .summary-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .summary-title {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .summary-subtitle {
+      color: var(--text-tertiary);
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+    .ai-note {
+      background: linear-gradient(135deg, #EFF6FF 0%, #F5F3FF 100%);
+      border: 1px solid #DBEAFE;
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      margin-bottom: 28px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .ai-icon-circle {
+      flex-shrink: 0;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2563EB, #8B5CF6);
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      font-size: 14px;
+    }
+    .ai-note-text {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+    }
+    .ai-note-text strong { color: var(--text-primary); }
+
+    .summary-section {
+      margin-bottom: 28px;
+    }
+    .summary-section h2 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .summary-section p {
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--text-primary);
+    }
+    .decision-card {
+      background: #ECFDF5;
+      border-left: 3px solid var(--success);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .participant-grid {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .participant-card {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px 6px 6px;
+      background: var(--bg-subtle);
+      border-radius: 999px;
+      font-size: 12px;
+    }
+    .participant-card .bubble-avatar {
+      width: 24px; height: 24px;
+      font-size: 10px;
+    }
+    .participant-percent {
+      color: var(--text-tertiary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ============ AI 助手抽屉 ============ */
+    .ai-drawer {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-card);
+      border-left: 1px solid var(--border-default);
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+    .ai-drawer-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-default);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ai-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2563EB, #8B5CF6);
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      flex-shrink: 0;
+    }
+    .ai-title-block { flex: 1; min-width: 0; }
+    .ai-title-block .ai-name { font-weight: 600; font-size: 13px; }
+    .ai-title-block .ai-sub { font-size: 11px; color: var(--text-tertiary); }
+    .ai-drawer-toggle {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-tertiary);
+      cursor: pointer;
+    }
+    .ai-drawer-toggle:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+    .ai-quick {
+      padding: 10px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      border-bottom: 1px solid var(--border-default);
+    }
+    .ai-chip {
+      padding: 5px 10px;
+      background: var(--bg-subtle);
+      border: 1px solid transparent;
+      border-radius: 999px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .ai-chip:hover {
+      background: var(--accent-soft);
+      color: var(--accent-primary);
+      border-color: rgba(37, 99, 235, 0.2);
+    }
+
+    .ai-drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .ai-msg-user, .ai-msg-bot { display: flex; gap: 10px; max-width: 92%; }
+    .ai-msg-user { align-self: flex-end; flex-direction: row-reverse; }
+    .ai-msg-bubble {
+      padding: 9px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .ai-msg-user .ai-msg-bubble {
+      background: var(--accent-primary);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .ai-msg-bot .ai-msg-bubble {
+      background: var(--bg-subtle);
+      color: var(--text-primary);
+      border-bottom-left-radius: 4px;
+    }
+    .ai-msg-user .bubble-avatar {
+      width: 26px; height: 26px;
+      font-size: 11px;
+      background: linear-gradient(135deg, #6366F1, #8B5CF6);
+    }
+    .ai-msg-bot .bubble-avatar {
+      width: 26px; height: 26px;
+      font-size: 11px;
+      background: linear-gradient(135deg, #2563EB, #8B5CF6);
+    }
+    .ai-citation {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 6px;
+      padding: 3px 7px;
+      background: white;
+      border: 1px solid var(--border-default);
+      border-radius: 4px;
+      font-size: 11px;
+      color: var(--accent-primary);
+      cursor: pointer;
+    }
+    .ai-citation:hover { background: var(--accent-soft); }
+
+    .ai-input-area {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border-default);
+    }
+    .ai-input-wrapper {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      border-radius: 12px;
+      transition: border-color 0.15s;
+    }
+    .ai-input-wrapper:focus-within {
+      border-color: var(--accent-primary);
+      background: var(--bg-card);
+    }
+    .ai-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 13px;
+      resize: none;
+      color: var(--text-primary);
+      font-family: inherit;
+      line-height: 1.5;
+      max-height: 80px;
+      min-height: 18px;
+    }
+    .ai-input::placeholder { color: var(--text-tertiary); }
+    .ai-send {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: var(--accent-primary);
+      color: white;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ai-send:hover { background: var(--accent-primary-hover); }
+
+    /* 抽屉折叠状态 */
+    .ai-drawer.collapsed {
+      align-items: center;
+      padding: 12px 0;
+    }
+    .ai-drawer.collapsed > *:not(.ai-collapsed-icon) { display: none; }
+    .ai-collapsed-icon {
+      display: none;
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #2563EB, #8B5CF6);
+      align-items: center; justify-content: center;
+      color: white;
+      cursor: pointer;
+    }
+    .ai-drawer.collapsed .ai-collapsed-icon { display: flex; }
+
+    /* ============ 底栏 ============ */
+    .bottom-bar {
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border-default);
+      gap: 18px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    .level-meter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .level-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 14px;
+    }
+    .level-bar {
+      width: 3px;
+      background: var(--border-strong);
+      border-radius: 1px;
+      transition: height 0.2s;
+    }
+    .level-bar.on { background: var(--success); }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+    .status-dot.warn { background: var(--warning); }
+    .status-dot.danger { background: var(--danger); }
+    .active-speakers {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .active-speakers .bubble-avatar {
+      width: 20px; height: 20px;
+      font-size: 9px;
+    }
+    .spacer { flex: 1; }
+
+    /* ============ 悬浮字幕窗 ============ */
+    .float-subtitle {
+      position: fixed;
+      top: 80px;
+      right: 40px;
+      width: 460px;
+      background: rgba(20, 22, 28, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 14px;
+      box-shadow: var(--shadow-float);
+      color: white;
+      z-index: 100;
+      overflow: hidden;
+      cursor: move;
+      user-select: none;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .float-subtitle.hidden {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.98);
+      pointer-events: none;
+    }
+    .float-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .float-grip {
+      color: rgba(255, 255, 255, 0.4);
+      padding: 0 4px;
+      letter-spacing: -2px;
+    }
+    .float-mode {
+      display: flex;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 7px;
+      padding: 2px;
+      gap: 1px;
+    }
+    .float-mode-btn {
+      padding: 4px 10px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.6);
+      background: transparent;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .float-mode-btn:hover { color: rgba(255, 255, 255, 0.9); }
+    .float-mode-btn.active {
+      background: rgba(255, 255, 255, 0.18);
+      color: white;
+    }
+    .float-tools {
+      margin-left: auto;
+      display: flex;
+      gap: 2px;
+    }
+    .float-tool-btn {
+      width: 26px; height: 26px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.55);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .float-tool-btn:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+
+    .float-content {
+      padding: 14px 16px;
+      max-height: 220px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .float-line {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .float-spk-dot {
+      flex-shrink: 0;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-top: 9px;
+    }
+    .float-text-block { flex: 1; min-width: 0; }
+    .float-text-source {
+      font-size: 15px;
+      line-height: 1.5;
+      color: white;
+      font-weight: 500;
+    }
+    .float-text-translation {
+      font-size: 13px;
+      line-height: 1.5;
+      margin-top: 3px;
+      color: rgba(255, 255, 255, 0.65);
+    }
+    /* 模式控制 */
+    .float-subtitle[data-mode="source"] .float-text-translation { display: none; }
+    .float-subtitle[data-mode="translation"] .float-text-source { display: none; }
+    .float-subtitle[data-mode="translation"] .float-text-translation {
+      font-size: 15px;
+      color: white;
+      font-weight: 500;
+    }
+
+    .float-pip-hint {
+      position: absolute;
+      bottom: -28px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 10px;
+      color: var(--text-tertiary);
+      pointer-events: none;
+    }
+
+    /* ============ 通用工具图标 ============ */
+    .icon { display: inline-flex; align-items: center; justify-content: center; }
+    .icon svg { display: block; }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- ============ 顶栏 ============ -->
+    <header class="top-bar">
+      <a href="home.html" class="brand" style="text-decoration:none;color:inherit;cursor:pointer" title="回到主页">
+        <div class="brand-logo">AC</div>
+        <span>AudioClaw</span>
+      </a>
+      <div class="top-divider"></div>
+      <a href="home.html" style="display:flex;align-items:center;gap:4px;padding:6px 10px;border-radius:8px;color:var(--text-secondary);font-size:12px;text-decoration:none;background:var(--bg-subtle);cursor:pointer" title="返回主页">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        主页
+      </a>
+      <div class="top-divider"></div>
+
+      <div class="recording-status">
+        <div class="recording-dot"></div>
+        <span>录制中</span>
+      </div>
+
+      <div class="meeting-title">
+        <div class="meeting-title-main">AI 会议平台产品介绍 · 神泉科技 × 株式会社サンライズ</div>
+        <div class="meeting-title-sub">中文 ↔ 日本語 · 4 位参会者 · 进行 14:32</div>
+      </div>
+
+      <div class="top-actions">
+        <button class="btn icon active" id="btnFloat" title="悬浮字幕窗">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="14" height="10" rx="2"/><rect x="11" y="11" width="10" height="7" rx="1.5" fill="currentColor" fill-opacity="0.2"/></svg>
+          <span>悬浮字幕</span>
+        </button>
+
+        <button class="btn" title="暂停">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
+          <span>暂停</span>
+        </button>
+
+        <button class="btn danger" title="结束会议 (⌘⇧E)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg>
+          <span>结束</span>
+        </button>
+
+        <div class="top-divider"></div>
+
+        <button class="btn icon" title="设置" onclick="location.href='settings.html'">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+
+        <div class="avatar" title="李明" onclick="location.href='home.html'" style="cursor:pointer">李</div>
+      </div>
+    </header>
+
+    <!-- ============ 主体 ============ -->
+    <main class="main" id="mainGrid">
+
+      <!-- 工作区 -->
+      <div class="work-area">
+        <div class="tabs">
+          <button class="tab active" data-tab="transcript">实时转写流</button>
+          <button class="tab" data-tab="summary">会议总结</button>
+        </div>
+
+        <!-- ====== Tab 1: 实时转写流 ====== -->
+        <section class="tab-content active" id="tab-transcript">
+          <div class="transcript-header">
+            <div class="speaker-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:var(--speaker-1)"></div>李明 · 销售总监</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--speaker-2)"></div>田中健太 · CTO</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--speaker-3)"></div>王芳 · 产品经理</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--speaker-4)"></div>佐藤美咲 · 产品总监</div>
+            </div>
+            <div class="transcript-meta">
+              <span>双语对照</span>
+              <span>·</span>
+              <span>自动滚动 ↓</span>
+            </div>
+          </div>
+
+          <div class="bubbles" id="bubbles">
+
+            <div class="bubble spk-1">
+              <div class="bubble-avatar">李</div>
+              <div class="bubble-body">
+                <div class="bubble-head">
+                  <span class="bubble-name">李明</span>
+                  <span class="bubble-role">销售总监</span>
+                  <span class="bubble-time">14:18:02</span>
+                  <div class="bubble-actions">
+                    <button class="bubble-action" title="标记重点">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 8.5 22 9.3 17 14 18.2 21 12 17.8 5.8 21 7 14 2 9.3 9 8.5 12 2"/></svg>
+                    </button>
+                    <button class="bubble-action" title="问 AI">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="bubble-text">田中先生、佐藤さん，欢迎来到神泉科技。今天非常感谢两位抽时间来听我们的产品介绍。</div>
+                <div class="bubble-translation">田中様、佐藤様、神泉テクノロジーへようこそ。本日はお忙しい中、当社の製品紹介にお時間をいただき、誠にありがとうございます。</div>
+              </div>
+            </div>
+
+            <div class="bubble spk-2">
+              <div class="bubble-avatar">田</div>
+              <div class="bubble-body">
+                <div class="bubble-head">
+                  <span class="bubble-name">田中 健太</span>
+                  <span class="bubble-role">CTO</span>
+                  <span class="bubble-time">14:18:29</span>
+                  <div class="bubble-actions">
+                    <button class="bubble-action" title="标记重点"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 8.5 22 9.3 17 14 18.2 21 12 17.8 5.8 21 7 14 2 9.3 9 8.5 12 2"/></svg></button>
+                  </div>
+                </div>
+                <div class="bubble-text">こちらこそ、よろしくお願いいたします。御社のAI会議プラットフォームについて、ぜひ詳しくお聞かせください。</div>
+                <div class="bubble-translation">您好，请多关照。希望能详细听一下贵公司AI会议平台的介绍。</div>
+              </div>
+            </div>
+
+            <div class="bubble spk-3">
+              <div class="bubble-avatar">王</div>
+              <div class="bubble-body">
+                <div class="bubble-head">
+                  <span class="bubble-name">王芳</span>
+                  <span class="bubble-role">产品经理</span>
+                  <span class="bubble-time">14:19:11</span>
+                </div>
+                <div class="bubble-text">我先简单介绍一下产品概况。AudioClaw 是一款基于浏览器的 AI 会议平台，核心能力包括：实时说话人识别、<span class="low-confidence">多语种</span>语音转写、双向翻译、会议纪要自动生成、以及会中 AI 提问。</div>
+                <div class="bubble-translation">まず製品の概要を簡単にご紹介します。AudioClaw はブラウザベースの AI 会議プラットフォームで、コア機能には、リアルタイム話者識別、多言語音声認識、双方向翻訳、会議議事録の自動生成、会議中の AI 質問応答が含まれます。</div>
+              </div>
+            </div>
+
+            <div class="bubble spk-4">
+              <div class="bubble-avatar">佐</div>
+              <div class="bubble-body">
+                <div class="bubble-head">
+                  <span class="bubble-name">佐藤 美咲</span>
+                  <span class="bubble-role">产品总监</span>
+                  <span class="bubble-time">14:20:03</span>
+                </div>
+                <div class="bubble-text">ブラウザだけで動くということですね。インストール不要というのは導入のハードルが下がって助かります。対応言語はどのくらいありますか？</div>
+                <div class="bubble-translation">您是说只用浏览器就能运行对吧。无需安装这一点能大大降低引入门槛，非常有帮助。请问支持多少种语言？</div>
+              </div>
+            </div>
+
+            <div class="bubble spk-3">
+              <div class="bubble-avatar">王</div>
+              <div class="bubble-body">
+                <div class="bubble-head">
+                  <span class="bubble-name">王芳</span>
+                  <span class="bubble-role">产品经理</span>
+                  <span class="bubble-time">14:20:47</span>
+                  <div class="bubble-actions">
+                    <button class="bubble-action starred" title="已标记">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 8.5 22 9.3 17 14 18.2 21 12 17.8 5.8 21 7 14 2 9.3 9 8.5 12 2"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="bubble-text">是的，零安装。当前 V1 版本支持中、英、日 三种语言的双向识别与翻译，V2 会扩展到韩、西、法、德。每种语言的识别准确率在标准会议场景下都在 96% 以上。</div>
+                <div class="bubble-translation">はい、インストール不要です。現在の V1 バージョンでは、中国語・英語・日本語の三言語の双方向認識と翻訳に対応しており、V2 では韓国語・スペイン語・フランス語・ドイツ語へ拡張予定です。各言語の認識精度は標準的な会議シーンで 96% 以上です。</div>
+              </div>
+            </div>
+
+            <div class="bubble spk-2">
+              <div class="bubble-avatar">田</div>
+              <div class="bubble-body">
+                <div class="bubble-head">
+                  <span class="bubble-name">田中 健太</span>
+                  <span class="bubble-role">CTO</span>
+                  <span class="bubble-time">14:21:39</span>
+                </div>
+                <div class="bubble-text">専門用語、特に医療や金融分野の用語についての精度は心配ですね。カスタム辞書の機能はありますか？</div>
+                <div class="bubble-translation">专业术语方面比较担心，尤其是医疗、金融领域的术语。请问有自定义词库的功能吗？</div>
+              </div>
+            </div>
+
+            <div class="bubble spk-1">
+              <div class="bubble-avatar">李</div>
+              <div class="bubble-body">
+                <div class="bubble-head">
+                  <span class="bubble-name">李明</span>
+                  <span class="bubble-role">销售总监</span>
+                  <span class="bubble-time">14:22:18</span>
+                </div>
+                <div class="bubble-text">有的。我们提供两层术语支持：第一层是用户级的个人热词库，可以上传 Excel 一次性导入；第二层是企业级的术语表，支持锁定固定译法，比如公司名、产品名。</div>
+                <div class="bubble-translation">ございます。当社では二層構成の用語サポートを提供しています。第一層はユーザー単位のパーソナル用語集で、Excel ファイルから一括インポートが可能です。第二層は企業単位の用語表で、社名・製品名など固定訳の指定にも対応しています。</div>
+              </div>
+            </div>
+
+            <div class="bubble spk-4">
+              <div class="bubble-avatar">佐</div>
+              <div class="bubble-body">
+                <div class="bubble-head">
+                  <span class="bubble-name">佐藤 美咲</span>
+                  <span class="bubble-role">产品总监</span>
+                  <span class="bubble-time">14:23:05</span>
+                </div>
+                <div class="bubble-text">セキュリティについても確認させてください。会議内容には機密情報が含まれることが多いので、データの取り扱いが気になります。</div>
+                <div class="bubble-translation">关于安全方面也想确认一下。会议内容经常涉及机密信息，所以比较在意数据是如何处理的。</div>
+              </div>
+            </div>
+
+            <div class="bubble spk-1">
+              <div class="bubble-avatar">李</div>
+              <div class="bubble-body">
+                <div class="bubble-head">
+                  <span class="bubble-name">李明</span>
+                  <span class="bubble-role">销售总监</span>
+                  <span class="bubble-time">14:24:01</span>
+                  <div class="bubble-actions">
+                    <button class="bubble-action starred" title="已标记">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 8.5 22 9.3 17 14 18.2 21 12 17.8 5.8 21 7 14 2 9.3 9 8.5 12 2"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="bubble-text">我们提供三种部署模式：标准 SaaS 模式（端到端加密 + 日本 AWS 东京区）、专属云模式、以及私有化部署。日本客户我们建议东京区或私有化部署，完全符合 APPI 个人情报保护法。</div>
+                <div class="bubble-translation">三つの導入モデルをご用意しております：標準 SaaS モデル（エンドツーエンド暗号化 + AWS 東京リージョン）、専用クラウドモデル、オンプレミス導入です。日本のお客様には東京リージョンまたはオンプレミスをお勧めしており、APPI（個人情報保護法）に完全準拠しています。</div>
+              </div>
+            </div>
+
+            <div class="bubble spk-2">
+              <div class="bubble-avatar">田</div>
+              <div class="bubble-body">
+                <div class="bubble-head">
+                  <span class="bubble-name">田中 健太</span>
+                  <span class="bubble-role">CTO</span>
+                  <span class="bubble-time">14:25:14</span>
+                </div>
+                <div class="bubble-text">価格についてはいかがでしょうか？まず 50 名規模で導入を検討したいのですが。</div>
+                <div class="bubble-translation">价格方面怎么样？我们想先按 50 人规模考虑引入。</div>
+              </div>
+            </div>
+
+            <!-- 实时识别中的气泡 -->
+            <div class="bubble spk-3 live">
+              <div class="bubble-avatar">王</div>
+              <div class="bubble-body">
+                <div class="bubble-head">
+                  <span class="bubble-name">王芳</span>
+                  <span class="bubble-role">产品经理</span>
+                  <span class="bubble-time">14:26:42</span>
+                  <span style="font-size:11px;color:var(--accent-primary);margin-left:8px;">● 识别中</span>
+                </div>
+                <div class="bubble-text">50 人规模属于我们的专业版。专业版每用户每月 ¥80，年付 9 折，包含完整的实时转写、翻译、纪要、AI 提问，以及</div>
+                <div class="bubble-translation">50 名規模は当社のプロフェッショナル版に該当します。プロフェッショナル版は 1 ユーザーあたり月額 ¥80、年払いで 10% 割引、リアルタイム文字起こし・翻訳・議事録・AI 質問応答が含まれます……</div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ====== Tab 2: 会议总结 ====== -->
+        <section class="tab-content" id="tab-summary">
+          <div class="summary-page">
+
+            <div class="summary-title-row">
+              <div class="summary-title">AI 会议平台产品介绍 · 会议总结</div>
+              <button class="btn primary">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>导出</span>
+              </button>
+            </div>
+            <div class="summary-subtitle">2026 年 5 月 26 日（火） 14:18 — 15:02 · 4 名参会者 · 神泉科技 ↔ 株式会社サンライズ</div>
+
+            <div class="ai-note">
+              <div class="ai-icon-circle">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15 8.5 22 9.3 17 14 18.2 21 12 17.8 5.8 21 7 14 2 9.3 9 8.5 12 2"/></svg>
+              </div>
+              <div class="ai-note-text">
+                <strong>AI 摘要</strong>　神泉科技向株式会社サンライズ介绍了 AudioClaw AI 会议平台，重点演示了多语言实时识别、双层术语库、安全合规等能力。客户对零安装部署方式表示肯定，对专业术语精度和数据安全提出了关切。双方就 50 人规模引入达成初步意向，后续将就报价、术语样本、部署方式继续推进。
+              </div>
+            </div>
+
+            <div class="summary-section">
+              <h2>✓ 关键决议</h2>
+              <div class="decision-card">客户认可"浏览器即用"的部署模式，作为后续推进的基础方案。</div>
+              <div class="decision-card">优先按 <strong>50 名规模 · 专业版</strong>方向准备商务方案。</div>
+              <div class="decision-card">数据合规优先采用 <strong>AWS 东京区</strong>，私有化部署作为备选。</div>
+            </div>
+
+            <div class="summary-section">
+              <h2>▶ 待办与负责人</h2>
+              <div class="todo-item">
+                <div class="todo-checkbox"></div>
+                <div class="todo-body">
+                  <div class="todo-text">提供金融、医疗领域术语库样本与识别精度对比</div>
+                  <div class="todo-meta">
+                    <span class="owner-chip"><span class="owner-avatar" style="background:var(--speaker-3)">王</span>王芳</span>
+                    <span>📅 5/29 前</span>
+                  </div>
+                </div>
+              </div>
+              <div class="todo-item">
+                <div class="todo-checkbox"></div>
+                <div class="todo-body">
+                  <div class="todo-text">准备 50 人规模的正式报价方案（含年付折扣 / 私有化部署加价）</div>
+                  <div class="todo-meta">
+                    <span class="owner-chip"><span class="owner-avatar" style="background:var(--speaker-1)">李</span>李明</span>
+                    <span>📅 6/1 前</span>
+                  </div>
+                </div>
+              </div>
+              <div class="todo-item">
+                <div class="todo-checkbox"></div>
+                <div class="todo-body">
+                  <div class="todo-text">技术对接：与株式会社サンライズ IT 部门确认网络环境与合规需求</div>
+                  <div class="todo-meta">
+                    <span class="owner-chip"><span class="owner-avatar" style="background:var(--speaker-2)">田</span>田中 健太</span>
+                    <span>📅 6/5 前</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="summary-section">
+              <h2>! 遗留问题</h2>
+              <p>客户尚未最终确定部署方式（SaaS / 私有化），需要 IT 部门加入技术对接后再决策。</p>
+            </div>
+
+            <div class="summary-section">
+              <h2>👥 参会人与发言占比</h2>
+              <div class="participant-grid">
+                <div class="participant-card"><div class="bubble-avatar" style="background:var(--speaker-1)">李</div>李明<span class="participant-percent">32%</span></div>
+                <div class="participant-card"><div class="bubble-avatar" style="background:var(--speaker-2)">田</div>田中 健太<span class="participant-percent">28%</span></div>
+                <div class="participant-card"><div class="bubble-avatar" style="background:var(--speaker-3)">王</div>王芳<span class="participant-percent">25%</span></div>
+                <div class="participant-card"><div class="bubble-avatar" style="background:var(--speaker-4)">佐</div>佐藤 美咲<span class="participant-percent">15%</span></div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+      </div>
+
+      <!-- ============ AI 助手抽屉 ============ -->
+      <aside class="ai-drawer" id="aiDrawer">
+        <div class="ai-drawer-header">
+          <div class="ai-avatar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h.01"/><path d="M16 12h.01"/><path d="M9 16c.85.63 1.885 1 3 1s2.15-.37 3-1"/></svg>
+          </div>
+          <div class="ai-title-block">
+            <div class="ai-name">AudioClaw 助手</div>
+            <div class="ai-sub">基于本场会议上下文回答</div>
+          </div>
+          <button class="ai-drawer-toggle" id="drawerToggle" title="收起 (⌘K)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+
+        <!-- 折叠时的展开按钮 -->
+        <div class="ai-collapsed-icon" id="drawerExpand" title="展开 (⌘K)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 16c.85.63 1.885 1 3 1s2.15-.37 3-1"/></svg>
+        </div>
+
+        <div class="ai-quick">
+          <div class="ai-chip">总结过去 5 分钟</div>
+          <div class="ai-chip">列出客户提问</div>
+          <div class="ai-chip">找数字承诺</div>
+          <div class="ai-chip">翻译刚才那段</div>
+        </div>
+
+        <div class="ai-drawer-body">
+
+          <div class="ai-msg-bot">
+            <div class="bubble-avatar">AI</div>
+            <div class="ai-msg-bubble">
+              你好，我是 AudioClaw 会议助手。我会基于这场会议截至当前的所有内容回答你的问题——可以问我"刚才客户都关心什么？"、"价格相关的内容总结一下"、或者点上方快捷指令。
+            </div>
+          </div>
+
+          <div class="ai-msg-user">
+            <div class="bubble-avatar">李</div>
+            <div class="ai-msg-bubble">客户到目前为止主要关心哪几方面？</div>
+          </div>
+
+          <div class="ai-msg-bot">
+            <div class="bubble-avatar">AI</div>
+            <div>
+              <div class="ai-msg-bubble">
+                客户（田中、佐藤）截至 14:26 主要关心三个方面：<br><br>
+                <strong>1. 多语种识别精度</strong>，尤其是医疗、金融专业术语<br>
+                <strong>2. 数据安全与合规</strong>，关切机密信息处理与 APPI 合规<br>
+                <strong>3. 部署门槛</strong>，对"浏览器即用、零安装"反馈积极<br><br>
+                价格相关的提问刚刚开始，王芳正在介绍专业版方案。
+              </div>
+              <span class="ai-citation">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                引用 3 条转写
+              </span>
+            </div>
+          </div>
+
+          <div class="ai-msg-user">
+            <div class="bubble-avatar">李</div>
+            <div class="ai-msg-bubble">田中说想 50 人规模，那专业版的年费大概多少？</div>
+          </div>
+
+          <div class="ai-msg-bot">
+            <div class="bubble-avatar">AI</div>
+            <div>
+              <div class="ai-msg-bubble">
+                按王芳刚才说的：专业版 ¥80 / 用户 / 月，年付 9 折。<br><br>
+                50 人 × ¥80 × 12 × 0.9 = <strong>¥43,200 / 年</strong><br><br>
+                注：客户提到的是日元报价场景，是否需要我换算成日元？（按当前汇率约 ¥876,000 JPY）
+              </div>
+              <span class="ai-citation">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/></svg>
+                引用 王芳 14:26:42
+              </span>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="ai-input-area">
+          <div class="ai-input-wrapper">
+            <textarea class="ai-input" rows="1" placeholder="请输入你的问题…例：客户关心安全吗？"></textarea>
+            <button class="ai-send" title="发送">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+    </main>
+
+    <!-- ============ 底栏 ============ -->
+    <footer class="bottom-bar">
+      <div class="level-meter" title="麦克风电平">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <div class="level-bars" id="micBars">
+          <div class="level-bar on" style="height:30%"></div>
+          <div class="level-bar on" style="height:55%"></div>
+          <div class="level-bar on" style="height:75%"></div>
+          <div class="level-bar on" style="height:45%"></div>
+          <div class="level-bar" style="height:25%"></div>
+        </div>
+      </div>
+
+      <span style="font-variant-numeric:tabular-nums">⏱ 00:14:32</span>
+
+      <div class="active-speakers">
+        <span>活跃：</span>
+        <div class="bubble-avatar" style="background:var(--speaker-3)">王</div>
+        <span style="color:var(--text-primary);font-weight:500">王芳</span>
+      </div>
+
+      <div class="spacer"></div>
+
+      <span class="status-pill"><span class="status-dot"></span>识别正常</span>
+      <span class="status-pill"><span class="status-dot"></span>网络良好</span>
+    </footer>
+
+  </div>
+
+  <!-- ============ 悬浮字幕窗 ============ -->
+  <div class="float-subtitle" id="floatSubtitle" data-mode="both">
+    <div class="float-toolbar">
+      <span class="float-grip">⋮⋮</span>
+      <div class="float-mode">
+        <button class="float-mode-btn" data-mode="source">原文</button>
+        <button class="float-mode-btn" data-mode="translation">翻译</button>
+        <button class="float-mode-btn active" data-mode="both">双语</button>
+      </div>
+      <div class="float-tools">
+        <button class="float-tool-btn" title="暂停字幕滚动">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
+        </button>
+        <button class="float-tool-btn" title="固定/解锁位置">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>
+        </button>
+        <button class="float-tool-btn" title="关闭" id="floatClose">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="float-content">
+      <div class="float-line">
+        <span class="float-spk-dot" style="background:var(--speaker-2)"></span>
+        <div class="float-text-block">
+          <div class="float-text-source">価格についてはいかがでしょうか？まず 50 名規模で導入を検討したいのですが。</div>
+          <div class="float-text-translation">价格方面怎么样？我们想先按 50 人规模考虑引入。</div>
+        </div>
+      </div>
+      <div class="float-line">
+        <span class="float-spk-dot" style="background:var(--speaker-3)"></span>
+        <div class="float-text-block">
+          <div class="float-text-source">50 人规模属于我们的专业版。专业版每用户每月 ¥80，年付 9 折，包含完整的实时转写、翻译、纪要、AI 提问，以及……</div>
+          <div class="float-text-translation">50 名規模は当社のプロフェッショナル版に該当します。プロフェッショナル版は 1 ユーザーあたり月額 ¥80、年払いで 10% 割引、リアルタイム文字起こし・翻訳・議事録・AI 質問応答が含まれます……</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="float-pip-hint">↑ 悬浮窗在生产环境中将通过 Document PiP 浮于桌面任意应用之上</div>
+  </div>
+
+  <script>
+    // ============ Tab 切换 ============
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.tab;
+        document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
+        document.querySelectorAll('.tab-content').forEach(c => {
+          c.classList.toggle('active', c.id === 'tab-' + target);
+        });
+      });
+    });
+
+    // ============ AI 抽屉折叠/展开 ============
+    const mainGrid = document.getElementById('mainGrid');
+    const aiDrawer = document.getElementById('aiDrawer');
+    const drawerToggle = document.getElementById('drawerToggle');
+    const drawerExpand = document.getElementById('drawerExpand');
+
+    drawerToggle.addEventListener('click', () => {
+      mainGrid.classList.add('drawer-closed');
+      aiDrawer.classList.add('collapsed');
+    });
+    drawerExpand.addEventListener('click', () => {
+      mainGrid.classList.remove('drawer-closed');
+      aiDrawer.classList.remove('collapsed');
+    });
+
+    // ============ 议题树切换（仅视觉） ============
+    document.querySelectorAll('.tree-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.tree-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+      });
+    });
+
+    // ============ 悬浮字幕窗：模式切换 ============
+    const floatSubtitle = document.getElementById('floatSubtitle');
+    document.querySelectorAll('.float-mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode;
+        floatSubtitle.dataset.mode = mode;
+        document.querySelectorAll('.float-mode-btn').forEach(b => b.classList.toggle('active', b === btn));
+      });
+    });
+
+    // ============ 悬浮字幕窗：开关 ============
+    const btnFloat = document.getElementById('btnFloat');
+    const floatClose = document.getElementById('floatClose');
+    let floatVisible = true;
+    function toggleFloat(show) {
+      floatVisible = show ?? !floatVisible;
+      floatSubtitle.classList.toggle('hidden', !floatVisible);
+      btnFloat.classList.toggle('active', floatVisible);
+    }
+    btnFloat.addEventListener('click', () => toggleFloat());
+    floatClose.addEventListener('click', () => toggleFloat(false));
+
+    // ============ 悬浮字幕窗：拖拽 ============
+    (() => {
+      let dragging = false, startX, startY, baseX, baseY;
+      const toolbar = floatSubtitle.querySelector('.float-toolbar');
+      toolbar.addEventListener('mousedown', e => {
+        if (e.target.closest('button')) return;
+        dragging = true;
+        startX = e.clientX; startY = e.clientY;
+        const rect = floatSubtitle.getBoundingClientRect();
+        baseX = rect.left; baseY = rect.top;
+        floatSubtitle.style.transition = 'none';
+      });
+      window.addEventListener('mousemove', e => {
+        if (!dragging) return;
+        const nx = baseX + (e.clientX - startX);
+        const ny = baseY + (e.clientY - startY);
+        floatSubtitle.style.left = Math.max(0, nx) + 'px';
+        floatSubtitle.style.top = Math.max(0, ny) + 'px';
+        floatSubtitle.style.right = 'auto';
+      });
+      window.addEventListener('mouseup', () => {
+        dragging = false;
+        floatSubtitle.style.transition = '';
+      });
+    })();
+
+    // ============ 电平动画（简单模拟） ============
+    function animateLevels(barsId) {
+      const bars = document.querySelectorAll(`#${barsId} .level-bar`);
+      setInterval(() => {
+        bars.forEach(b => {
+          const h = 15 + Math.random() * 70;
+          b.style.height = h + '%';
+          b.classList.toggle('on', Math.random() > 0.3);
+        });
+      }, 280);
+    }
+    animateLevels('micBars');
+
+    // ============ 键盘快捷键 ============
+    document.addEventListener('keydown', e => {
+      const meta = e.metaKey || e.ctrlKey;
+      if (meta && e.shiftKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        toggleFloat();
+      }
+      if (meta && e.shiftKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        const order = ['source', 'translation', 'both'];
+        const cur = floatSubtitle.dataset.mode;
+        const next = order[(order.indexOf(cur) + 1) % 3];
+        floatSubtitle.dataset.mode = next;
+        document.querySelectorAll('.float-mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === next));
+      }
+      if (meta && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        if (aiDrawer.classList.contains('collapsed')) drawerExpand.click();
+        else drawerToggle.click();
+      }
+      if (meta && (e.key === '1' || e.key === '2')) {
+        e.preventDefault();
+        const idx = parseInt(e.key) - 1;
+        document.querySelectorAll('.tab')[idx]?.click();
+      }
+    });
+
+    // 默认滚到底
+    const bubbles = document.getElementById('bubbles');
+    if (bubbles) bubbles.parentElement.scrollTop = bubbles.parentElement.scrollHeight;
+  </script>
+</body>
+</html>

@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AudioClaw · 术语热词库</title>
+<style>
+  :root {
+    --bg-app: #F7F7F8;
+    --bg-card: #FFFFFF;
+    --bg-subtle: #F2F3F5;
+    --bg-hover: #F0F1F3;
+    --border-default: #E5E7EB;
+    --border-strong: #D1D5DB;
+    --text-primary: #111827;
+    --text-secondary: #4B5563;
+    --text-tertiary: #9CA3AF;
+    --accent-primary: #2563EB;
+    --accent-primary-hover: #1D4ED8;
+    --accent-soft: #EFF6FF;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --shadow-sm: 0 1px 2px rgba(16,24,40,.04);
+    --shadow-md: 0 4px 12px rgba(16,24,40,.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+      "PingFang SC", "Hiragino Sans GB", "Hiragino Sans", "Yu Gothic", "Microsoft YaHei",
+      "Noto Sans CJK SC", "Noto Sans JP", sans-serif;
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--bg-app);
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, textarea, select { font-family: inherit; }
+  a { color: inherit; text-decoration: none; }
+
+  .app {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ============ 左侧导航 ============ */
+  .sidebar {
+    background: var(--bg-card);
+    border-right: 1px solid var(--border-default);
+    display: flex;
+    flex-direction: column;
+    padding: 14px 12px 12px;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 4px 8px 14px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border-default);
+  }
+  .brand-logo {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #2563EB 0%, #8B5CF6 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 13px;
+  }
+  .brand-name { font-weight: 600; font-size: 15px; }
+
+  .new-meeting-btn {
+    margin: 6px 4px 16px;
+    padding: 10px 14px;
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background .15s;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, .3);
+  }
+  .new-meeting-btn:hover { background: var(--accent-primary-hover); }
+
+  .nav-section { margin-bottom: 14px; }
+  .nav-title {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 4px 8px 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    margin-bottom: 1px;
+    font-size: 13px;
+    transition: background .12s, color .12s;
+  }
+  .nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .nav-item.active {
+    background: var(--accent-soft);
+    color: var(--accent-primary);
+    font-weight: 600;
+  }
+  .nav-item svg { flex-shrink: 0; }
+  .nav-count {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    background: var(--bg-subtle);
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .nav-item.active .nav-count { background: white; color: var(--accent-primary); }
+  .admin-badge {
+    margin-left: auto;
+    font-size: 9px;
+    color: white;
+    background: var(--warning);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: .03em;
+  }
+
+  .sidebar-bottom { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border-default); }
+  .user-card {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .user-card:hover { background: var(--bg-hover); }
+  .user-avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366F1, #8B5CF6);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 13px;
+  }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 13px; font-weight: 500; }
+  .user-plan { font-size: 11px; color: var(--text-tertiary); }
+
+  /* ============ 主区 ============ */
+  .main {
+    overflow-y: auto;
+    background: var(--bg-app);
+  }
+  .main::-webkit-scrollbar { width: 8px; }
+  .main::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border-default);
+    background: rgba(247, 247, 248, .8);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .page-title-row { display: flex; flex-direction: column; gap: 2px; }
+  .page-title { font-size: 20px; font-weight: 700; }
+  .page-sub { font-size: 12px; color: var(--text-tertiary); }
+  .top-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+  .content { padding: 24px 28px 80px; }
+
+  /* 按钮 */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+  .btn.primary { background: var(--accent-primary); border-color: var(--accent-primary); color: white; }
+  .btn.primary:hover { background: var(--accent-primary-hover); }
+  .btn.sm { padding: 5px 10px; font-size: 12px; }
+  .btn.icon-only { padding: 6px 8px; }
+  .btn.danger { color: var(--danger); border-color: rgba(239,68,68,.3); }
+  .btn.danger:hover { background: rgba(239,68,68,.06); }
+
+  /* 统计条 */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: 14px 18px;
+  }
+  .stat-label { color: var(--text-tertiary); font-size: 12px; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+  .stat-value { font-size: 22px; font-weight: 700; letter-spacing: -.01em; line-height: 1.1; }
+  .stat-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 4px; }
+  .stat-pill {
+    display: inline-block;
+    padding: 1px 6px;
+    background: var(--accent-soft);
+    color: var(--accent-primary);
+    border-radius: 4px;
+    font-size: 10px;
+    margin-left: 6px;
+  }
+
+  /* Tab */
+  .tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    background: var(--bg-subtle);
+    border-radius: 10px;
+    width: fit-content;
+    margin-bottom: 14px;
+  }
+  .tab {
+    padding: 7px 16px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all .15s;
+    font-weight: 500;
+    border: none;
+    background: transparent;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tab.active {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+  }
+  .tab .tab-count {
+    background: var(--border-default);
+    color: var(--text-secondary);
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 10px;
+  }
+  .tab.active .tab-count { background: var(--accent-soft); color: var(--accent-primary); }
+
+  /* 筛选条 */
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 12px;
+    border: 1px solid var(--border-default);
+    background: var(--bg-card);
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+  .chip:hover { border-color: var(--border-strong); }
+  .chip.active {
+    background: var(--text-primary);
+    color: white;
+    border-color: var(--text-primary);
+  }
+  .filter-sep { color: var(--text-tertiary); margin: 0 2px; }
+  .search-box {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    width: 240px;
+  }
+  .search-box input {
+    flex: 1; border: none; outline: none;
+    background: transparent; font-size: 13px;
+  }
+  .select {
+    padding: 7px 30px 7px 12px;
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-primary);
+    background: var(--bg-card) url("data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
+    background-size: 12px;
+    appearance: none;
+    cursor: pointer;
+    min-width: 120px;
+  }
+
+  /* 主表卡片 */
+  .table-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table thead th {
+    text-align: left;
+    padding: 11px 18px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    font-size: 12px;
+    background: var(--bg-subtle);
+    border-bottom: 1px solid var(--border-default);
+    white-space: nowrap;
+  }
+  .data-table tbody td {
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--border-default);
+    vertical-align: middle;
+  }
+  .data-table tbody tr:last-child td { border-bottom: none; }
+  .data-table tbody tr:hover { background: var(--bg-subtle); cursor: pointer; }
+  .data-table tbody tr.selected { background: var(--accent-soft); }
+  .col-check { width: 36px; }
+  .col-actions { width: 90px; text-align: right; }
+  .col-arrow { color: var(--text-tertiary); }
+
+  .checkbox {
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: 4px;
+    cursor: pointer;
+    background: white;
+  }
+  .checkbox.checked {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    position: relative;
+  }
+  .checkbox.checked::after {
+    content: '';
+    position: absolute;
+    left: 4px; top: 1px;
+    width: 5px; height: 9px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+
+  .term-source { font-weight: 500; font-size: 13.5px; }
+  .term-target { color: var(--text-secondary); font-size: 13px; }
+
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--bg-subtle);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .pill.locked { background: #FEF3C7; color: #92400E; }
+  .pill.auto { background: #DBEAFE; color: #1E40AF; }
+  .pill.industry { background: #EDE9FE; color: #6D28D9; }
+
+  .lang-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    background: var(--bg-subtle);
+    border-radius: 4px;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .freq-bar {
+    width: 70px;
+    height: 6px;
+    background: var(--bg-subtle);
+    border-radius: 999px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  .freq-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-primary), #8B5CF6);
+    border-radius: 999px;
+  }
+  .freq-num {
+    color: var(--text-tertiary);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .icon-btn {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-left: 2px;
+  }
+  .icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .icon-btn.danger:hover { background: rgba(239,68,68,.08); color: var(--danger); }
+
+  /* 表底栏 */
+  .table-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    border-top: 1px solid var(--border-default);
+    background: var(--bg-card);
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+
+  /* 批量操作 bar (出现在勾选后) */
+  .bulk-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 18px;
+    background: var(--accent-soft);
+    border-bottom: 1px solid var(--accent-primary);
+    font-size: 13px;
+    color: var(--accent-primary);
+  }
+
+  /* 企业共享提示卡 */
+  .enterprise-banner {
+    background: linear-gradient(135deg, #EFF6FF 0%, #F5F3FF 100%);
+    border: 1px solid #DBEAFE;
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    margin-bottom: 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .ent-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: white;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-sm);
+    color: var(--accent-primary);
+    flex-shrink: 0;
+  }
+  .ent-body { flex: 1; }
+  .ent-title { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+  .ent-sub { font-size: 12px; color: var(--text-secondary); }
+
+  /* hidden panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ 左侧导航 ============ -->
+  <nav class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">AC</div>
+      <div class="brand-name">AudioClaw</div>
+    </div>
+
+    <button class="new-meeting-btn" onclick="location.href='index.html'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <span>开始新会议</span>
+    </button>
+
+    <div class="nav-section">
+      <div class="nav-title">主导航</div>
+      <div class="nav-item" onclick="location.href='home.html'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>我的会议</span>
+        <span class="nav-count">42</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-title">资产库</div>
+      <div class="nav-item" onclick="location.href='voiceprint.html'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+        <span>声纹库</span>
+        <span class="nav-count">6</span>
+      </div>
+      <div class="nav-item active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <span>术语热词库</span>
+        <span class="nav-count">87</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-title">组织</div>
+      <div class="nav-item" onclick="location.href='admin.html'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+        <span>组织管理</span>
+        <span class="admin-badge">管理员</span>
+      </div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="nav-item" onclick="location.href='settings.html'" style="margin-bottom:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>设置</span>
+      </div>
+      <div class="user-card">
+        <div class="user-avatar">李</div>
+        <div class="user-info">
+          <div class="user-name">李明</div>
+          <div class="user-plan">管理员 · 神泉科技</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-tertiary)"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============ 主区 ============ -->
+  <main class="main">
+
+    <div class="top-bar">
+      <div class="page-title-row">
+        <div class="page-title">术语热词库</div>
+        <div class="page-sub">为专有名词、产品名、人名等定制识别与翻译规则</div>
+      </div>
+      <div class="top-actions">
+        <button class="btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          导入 Excel
+        </button>
+        <button class="btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          导出
+        </button>
+        <button class="btn primary">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          新增术语
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- 统计 -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">总术语数</div>
+          <div class="stat-value">87</div>
+          <div class="stat-sub">个人 64 · 企业 23</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">固定译法</div>
+          <div class="stat-value">52</div>
+          <div class="stat-sub">译文锁定不变</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">识别热词</div>
+          <div class="stat-value">35</div>
+          <div class="stat-sub">提升识别精度</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">本周命中</div>
+          <div class="stat-value">348</div>
+          <div class="stat-sub">↑ 较上周 +24%</div>
+        </div>
+      </div>
+
+      <!-- 企业共享卡 -->
+      <div class="enterprise-banner">
+        <div class="ent-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="ent-body">
+          <div class="ent-title">神泉科技企业术语库已启用 · 23 条共享术语自动同步</div>
+          <div class="ent-sub">由企业管理员统一维护，所有团队成员共享。最近更新 2 天前。</div>
+        </div>
+        <button class="btn">查看企业术语</button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" data-panel="mine">
+          我的术语
+          <span class="tab-count">64</span>
+        </button>
+        <button class="tab" data-panel="shared">
+          企业共享
+          <span class="tab-count">23</span>
+        </button>
+      </div>
+
+      <!-- ============ 我的术语 ============ -->
+      <section class="panel active" data-panel="mine">
+
+        <!-- 筛选条 -->
+        <div class="filter-bar">
+          <span class="chip active">全部 64</span>
+          <span class="chip">固定译法 38</span>
+          <span class="chip">识别热词 26</span>
+          <span class="filter-sep">|</span>
+          <select class="select">
+            <option>所有语言对</option>
+            <option>中 ↔ 日</option>
+            <option>中 ↔ 英</option>
+            <option>日 ↔ 英</option>
+            <option>多语言</option>
+          </select>
+          <select class="select">
+            <option>按命中次数</option>
+            <option>按添加时间</option>
+            <option>按字母排序</option>
+          </select>
+          <div class="search-box">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-tertiary)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="搜索源词或译文…">
+          </div>
+        </div>
+
+        <!-- 表格 -->
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="col-check"><div class="checkbox"></div></th>
+                <th>源词</th>
+                <th></th>
+                <th>译法</th>
+                <th>类型</th>
+                <th>语言对</th>
+                <th>命中</th>
+                <th class="col-actions"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="checkbox"></div></td>
+                <td><span class="term-source">AudioClaw</span></td>
+                <td class="col-arrow">→</td>
+                <td><span class="term-target">オーディオクロー</span></td>
+                <td><span class="pill locked">固定译法</span></td>
+                <td><span class="lang-tag">🇨🇳 中 → 🇯🇵 日</span></td>
+                <td><span class="freq-bar"><span class="freq-fill" style="width:90%"></span></span><span class="freq-num">87</span></td>
+                <td class="col-actions">
+                  <button class="icon-btn" title="编辑">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button class="icon-btn danger" title="删除">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox"></div></td>
+                <td><span class="term-source">神泉科技</span></td>
+                <td class="col-arrow">→</td>
+                <td><span class="term-target">シェンチュアン・テクノロジー</span></td>
+                <td><span class="pill locked">固定译法</span></td>
+                <td><span class="lang-tag">🇨🇳 中 → 🇯🇵 日</span></td>
+                <td><span class="freq-bar"><span class="freq-fill" style="width:82%"></span></span><span class="freq-num">62</span></td>
+                <td class="col-actions">
+                  <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox"></div></td>
+                <td><span class="term-source">サンライズ</span></td>
+                <td class="col-arrow">→</td>
+                <td><span class="term-target">サンライズ（保留原文）</span></td>
+                <td><span class="pill locked">固定译法</span></td>
+                <td><span class="lang-tag">🇯🇵 日 → 🇨🇳 中</span></td>
+                <td><span class="freq-bar"><span class="freq-fill" style="width:76%"></span></span><span class="freq-num">54</span></td>
+                <td class="col-actions">
+                  <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox"></div></td>
+                <td><span class="term-source">APPI</span></td>
+                <td class="col-arrow">⇄</td>
+                <td><span class="term-target">个人情报保护法 / 個人情報保護法</span></td>
+                <td><span class="pill locked">固定译法</span></td>
+                <td><span class="lang-tag">多语言</span></td>
+                <td><span class="freq-bar"><span class="freq-fill" style="width:64%"></span></span><span class="freq-num">38</span></td>
+                <td class="col-actions">
+                  <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox"></div></td>
+                <td><span class="term-source">声纹识别</span></td>
+                <td class="col-arrow">⇄</td>
+                <td><span class="term-target">話者識別 / Speaker Diarization</span></td>
+                <td><span class="pill auto">识别热词</span></td>
+                <td><span class="lang-tag">多语言</span></td>
+                <td><span class="freq-bar"><span class="freq-fill" style="width:55%"></span></span><span class="freq-num">31</span></td>
+                <td class="col-actions">
+                  <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox"></div></td>
+                <td><span class="term-source">プロフェッショナル版</span></td>
+                <td class="col-arrow">→</td>
+                <td><span class="term-target">专业版</span></td>
+                <td><span class="pill locked">固定译法</span></td>
+                <td><span class="lang-tag">🇯🇵 日 → 🇨🇳 中</span></td>
+                <td><span class="freq-bar"><span class="freq-fill" style="width:48%"></span></span><span class="freq-num">27</span></td>
+                <td class="col-actions">
+                  <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox"></div></td>
+                <td><span class="term-source">田中健太</span></td>
+                <td class="col-arrow">→</td>
+                <td><span class="term-target" style="font-style:italic;color:var(--text-tertiary)">不翻译（保留原文）</span></td>
+                <td><span class="pill auto">识别热词</span></td>
+                <td><span class="lang-tag">多语言</span></td>
+                <td><span class="freq-bar"><span class="freq-fill" style="width:42%"></span></span><span class="freq-num">24</span></td>
+                <td class="col-actions">
+                  <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox"></div></td>
+                <td><span class="term-source">SLA</span></td>
+                <td class="col-arrow">⇄</td>
+                <td><span class="term-target">服务级别协议 / サービスレベル契約</span></td>
+                <td><span class="pill locked">固定译法</span></td>
+                <td><span class="lang-tag">多语言</span></td>
+                <td><span class="freq-bar"><span class="freq-fill" style="width:38%"></span></span><span class="freq-num">22</span></td>
+                <td class="col-actions">
+                  <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox"></div></td>
+                <td><span class="term-source">个人情报保护委员会</span></td>
+                <td class="col-arrow">→</td>
+                <td><span class="term-target">個人情報保護委員会（PPC）</span></td>
+                <td><span class="pill locked">固定译法</span></td>
+                <td><span class="lang-tag">🇨🇳 中 → 🇯🇵 日</span></td>
+                <td><span class="freq-bar"><span class="freq-fill" style="width:36%"></span></span><span class="freq-num">19</span></td>
+                <td class="col-actions">
+                  <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox"></div></td>
+                <td><span class="term-source">エンタープライズ版</span></td>
+                <td class="col-arrow">→</td>
+                <td><span class="term-target">企业版</span></td>
+                <td><span class="pill locked">固定译法</span></td>
+                <td><span class="lang-tag">🇯🇵 日 → 🇨🇳 中</span></td>
+                <td><span class="freq-bar"><span class="freq-fill" style="width:34%"></span></span><span class="freq-num">18</span></td>
+                <td class="col-actions">
+                  <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox"></div></td>
+                <td><span class="term-source">Document Picture-in-Picture</span></td>
+                <td class="col-arrow">⇄</td>
+                <td><span class="term-target">悬浮字幕窗 / 浮遊字幕窓</span></td>
+                <td><span class="pill auto">识别热词</span></td>
+                <td><span class="lang-tag">多语言</span></td>
+                <td><span class="freq-bar"><span class="freq-fill" style="width:30%"></span></span><span class="freq-num">15</span></td>
+                <td class="col-actions">
+                  <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox"></div></td>
+                <td><span class="term-source">POC</span></td>
+                <td class="col-arrow">⇄</td>
+                <td><span class="term-target">概念验证 / 概念実証</span></td>
+                <td><span class="pill auto">识别热词</span></td>
+                <td><span class="lang-tag">多语言</span></td>
+                <td><span class="freq-bar"><span class="freq-fill" style="width:28%"></span></span><span class="freq-num">14</span></td>
+                <td class="col-actions">
+                  <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox"></div></td>
+                <td><span class="term-source">佐藤 美咲</span></td>
+                <td class="col-arrow">→</td>
+                <td><span class="term-target" style="font-style:italic;color:var(--text-tertiary)">不翻译（保留原文）</span></td>
+                <td><span class="pill auto">识别热词</span></td>
+                <td><span class="lang-tag">多语言</span></td>
+                <td><span class="freq-bar"><span class="freq-fill" style="width:25%"></span></span><span class="freq-num">13</span></td>
+                <td class="col-actions">
+                  <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox"></div></td>
+                <td><span class="term-source">クラウド導入</span></td>
+                <td class="col-arrow">→</td>
+                <td><span class="term-target">云端部署</span></td>
+                <td><span class="pill locked">固定译法</span></td>
+                <td><span class="lang-tag">🇯🇵 日 → 🇨🇳 中</span></td>
+                <td><span class="freq-bar"><span class="freq-fill" style="width:22%"></span></span><span class="freq-num">11</span></td>
+                <td class="col-actions">
+                  <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="checkbox"></div></td>
+                <td><span class="term-source">オンプレミス</span></td>
+                <td class="col-arrow">→</td>
+                <td><span class="term-target">私有化部署</span></td>
+                <td><span class="pill locked">固定译法</span></td>
+                <td><span class="lang-tag">🇯🇵 日 → 🇨🇳 中</span></td>
+                <td><span class="freq-bar"><span class="freq-fill" style="width:20%"></span></span><span class="freq-num">10</span></td>
+                <td class="col-actions">
+                  <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="table-footer">
+            <span>显示 15 / 64 条</span>
+            <div style="display:flex;gap:6px;align-items:center">
+              <button class="btn sm">‹ 上一页</button>
+              <span style="padding:0 8px">1 / 5</span>
+              <button class="btn sm">下一页 ›</button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ============ 企业共享 ============ -->
+      <section class="panel" data-panel="shared">
+        <div class="enterprise-banner" style="margin-bottom:14px">
+          <div class="ent-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+          <div class="ent-body">
+            <div class="ent-title">神泉科技 · 企业术语库</div>
+            <div class="ent-sub">由企业管理员维护 · 23 条 · 最近更新 2 天前 · 所有团队成员共享</div>
+          </div>
+          <button class="btn">联系管理员</button>
+        </div>
+
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>源词</th>
+                <th></th>
+                <th>译法</th>
+                <th>维护者</th>
+                <th>更新时间</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="term-source">神泉科技</span></td>
+                <td class="col-arrow">⇄</td>
+                <td><span class="term-target">Shenchuan Technology / シェンチュアン</span></td>
+                <td>陈志远</td>
+                <td>2 天前</td>
+              </tr>
+              <tr>
+                <td><span class="term-source">AudioClaw Pro</span></td>
+                <td class="col-arrow">⇄</td>
+                <td><span class="term-target">AudioClaw Pro / オーディオクロー Pro</span></td>
+                <td>陈志远</td>
+                <td>2 天前</td>
+              </tr>
+              <tr>
+                <td><span class="term-source">企业控制台</span></td>
+                <td class="col-arrow">⇄</td>
+                <td><span class="term-target">Enterprise Console / 企業コンソール</span></td>
+                <td>王芳</td>
+                <td>5 天前</td>
+              </tr>
+              <tr>
+                <td><span class="term-source">SSO 单点登录</span></td>
+                <td class="col-arrow">⇄</td>
+                <td><span class="term-target">SSO Single Sign-On / シングルサインオン</span></td>
+                <td>陈志远</td>
+                <td>5 天前</td>
+              </tr>
+              <tr>
+                <td><span class="term-source">话语权占比</span></td>
+                <td class="col-arrow">⇄</td>
+                <td><span class="term-target">Talk Time Share / 発言比率</span></td>
+                <td>王芳</td>
+                <td>1 周前</td>
+              </tr>
+              <tr>
+                <td><span class="term-source">悬浮字幕窗</span></td>
+                <td class="col-arrow">⇄</td>
+                <td><span class="term-target">Floating Caption / 浮遊字幕窓</span></td>
+                <td>王芳</td>
+                <td>1 周前</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="table-footer">
+            <span>显示 6 / 23 条</span>
+            <span style="color:var(--text-tertiary)">仅企业管理员可编辑</span>
+          </div>
+        </div>
+      </section>
+
+
+    </div>
+  </main>
+</div>
+
+<script>
+  // Tab 切换
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const name = tab.dataset.panel;
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
+      document.querySelectorAll('.panel').forEach(p => {
+        p.classList.toggle('active', p.dataset.panel === name);
+      });
+    });
+  });
+
+  // 表格行点击效果
+  document.querySelectorAll('.data-table tbody tr').forEach(row => {
+    const checkbox = row.querySelector('.checkbox');
+    if (checkbox) {
+      checkbox.addEventListener('click', e => {
+        e.stopPropagation();
+        checkbox.classList.toggle('checked');
+        row.classList.toggle('selected', checkbox.classList.contains('checked'));
+      });
+    }
+  });
+</script>
+</body>
+</html>

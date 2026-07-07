@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SenseAudio ASR 翻译测试</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #f0f2f5;
+    color: #333;
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a2e;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #888;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+
+  /* API Key */
+  .key-row {
+    display: flex;
+    gap: 8px;
+  }
+  .key-row input {
+    flex: 1;
+  }
+  .key-row button {
+    white-space: nowrap;
+    padding: 0 16px;
+  }
+
+  /* Form elements */
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: #777;
+    margin-bottom: 4px;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color .2s, box-shadow .2s;
+    background: #fafafa;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+    background: #fff;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 120px;
+    line-height: 1.5;
+  }
+
+  /* Audio section */
+  .audio-methods {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .audio-method {
+    border: 2px dashed #d9d9d9;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+  }
+  .audio-method:hover {
+    border-color: #4f46e5;
+    background: #f5f3ff;
+  }
+  .audio-method.recording {
+    border-color: #ef4444;
+    background: #fef2f2;
+    animation: pulse 1.2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .6; }
+  }
+
+  .audio-method .icon {
+    font-size: 28px;
+    margin-bottom: 6px;
+  }
+  .audio-method .label-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: #555;
+  }
+  .audio-method .hint {
+    font-size: 11px;
+    color: #999;
+    margin-top: 4px;
+  }
+  .audio-method input[type="file"] {
+    display: none;
+  }
+
+  /* Row layout */
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* Badge / tag */
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    margin-left: 6px;
+    font-weight: 500;
+  }
+  .tag-yes { background: #d1fae5; color: #065f46; }
+  .tag-no  { background: #fee2e2; color: #991b1b; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-primary {
+    background: #4f46e5;
+    color: #fff;
+    width: 100%;
+  }
+  .btn-primary:hover { background: #4338ca; }
+  .btn-primary:disabled {
+    background: #c7d2fe;
+    cursor: not-allowed;
+  }
+  .btn-outline {
+    background: #fff;
+    color: #4f46e5;
+    border: 1px solid #4f46e5;
+  }
+  .btn-outline:hover { background: #f5f3ff; }
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  /* Latency display */
+  .latency-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #555;
+    padding: 10px 14px;
+    background: #f9fafb;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+  .latency-value {
+    font-weight: 700;
+    font-size: 18px;
+    color: #4f46e5;
+  }
+  .latency-good { color: #059669 !important; }
+  .latency-warn { color: #d97706 !important; }
+  .latency-slow { color: #dc2626 !important; }
+
+  /* File info */
+  .file-info {
+    font-size: 12px;
+    color: #888;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .file-info .remove-file {
+    color: #ef4444;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  /* Status */
+  .loading-spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid #fff;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-msg {
+    background: #fef2f2;
+    color: #991b1b;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    border: 1px solid #fecaca;
+  }
+
+  .hidden { display: none !important; }
+
+  .model-hint {
+    font-size: 11px;
+    color: #999;
+    margin-top: 4px;
+  }
+
+  /* Responsive */
+  @media (max-width: 500px) {
+    .audio-methods { grid-template-columns: 1fr; }
+    .row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div>
+    <h1>SenseAudio ASR 翻译测试</h1>
+    <p class="subtitle">支持 4 个模型：Lite / Standard / Pro / DeepThink</p>
+  </div>
+
+  <!-- API Key -->
+  <div class="card">
+    <div class="card-title">API Key</div>
+    <div class="key-row">
+      <input type="password" id="apiKey" placeholder="输入你的 SenseAudio API Key">
+      <button class="btn btn-outline btn-sm" onclick="toggleKey()" id="toggleKeyBtn">显示</button>
+    </div>
+  </div>
+
+  <!-- Audio Input -->
+  <div class="card">
+    <div class="card-title">音频输入</div>
+    <div class="audio-methods">
+      <div class="audio-method" id="fileZone" onclick="document.getElementById('fileInput').click()">
+        <div class="icon">📁</div>
+        <div class="label-text">选择音频文件</div>
+        <div class="hint">wav / mp3 / ogg / flac / m4a / mp4，≤10MB</div>
+        <input type="file" id="fileInput" accept="audio/*">
+      </div>
+      <div class="audio-method" id="recordZone" onclick="toggleRecording()">
+        <div class="icon">🎙️</div>
+        <div class="label-text" id="recordLabel">点击录音</div>
+        <div class="hint" id="recordHint">最长 60 秒</div>
+        <audio id="recordPreview" class="hidden" controls></audio>
+      </div>
+    </div>
+    <div class="file-info hidden" id="fileInfo"></div>
+  </div>
+
+  <!-- Model + Languages -->
+  <div class="card">
+    <div class="card-title">识别 & 翻译设置</div>
+    <div class="row">
+      <div>
+        <label for="modelSelect">模型选择</label>
+        <select id="modelSelect" onchange="onModelChange()">
+          <option value="senseaudio-asr-lite-1.5-260319">Lite（轻量极速版）</option>
+          <option value="senseaudio-asr-1.5-260319">Standard（标准版）</option>
+          <option value="senseaudio-asr-pro-1.5-260319">Pro（专业版）</option>
+          <option value="senseaudio-asr-deepthink-1.5-260319">DeepThink（深度理解版）</option>
+        </select>
+        <div class="model-hint" id="modelHint">
+          <span class="tag tag-no">不支持翻译</span> 翻译需 Pro 或 DeepThink
+        </div>
+      </div>
+      <div>
+        <label for="sourceLang">源语言（留空自动检测）</label>
+        <select id="sourceLang">
+          <option value="">自动检测</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <label for="targetLang">翻译目标语言 <span id="transTag" class="tag tag-yes">已启用</span></label>
+      <select id="targetLang"></select>
+    </div>
+  </div>
+
+  <!-- Submit -->
+  <button class="btn btn-primary" id="submitBtn" onclick="submitTranscription()" disabled>
+    开始识别
+  </button>
+
+  <!-- Latency -->
+  <div class="latency-bar hidden" id="latencyBar">
+    <span>⏱ 接口时延：</span>
+    <span class="latency-value" id="latencyValue">-- ms</span>
+    <span style="font-size:11px;color:#999" id="latencyDetail"></span>
+  </div>
+
+  <!-- Output -->
+  <div class="card">
+    <div class="card-title">识别结果</div>
+    <div class="error-msg hidden" id="errorMsg"></div>
+    <textarea id="outputBox" placeholder="识别结果将显示在这里..." readonly></textarea>
+    <div style="display:flex;justify-content:flex-end;margin-top:8px;gap:8px">
+      <button class="btn btn-outline btn-sm" onclick="copyOutput()">复制结果</button>
+      <button class="btn btn-outline btn-sm" onclick="clearOutput()">清空</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ 语言数据 ============
+const ALL_LANGUAGES = [
+  { code: 'ar', name: '阿拉伯语' },
+  { code: 'yue', name: '粤语' },
+  { code: 'zh', name: '中文' },
+  { code: 'nl', name: '荷兰语' },
+  { code: 'en', name: '英文' },
+  { code: 'fr', name: '法语' },
+  { code: 'de', name: '德语' },
+  { code: 'id', name: '印尼语' },
+  { code: 'it', name: '意大利语' },
+  { code: 'ja', name: '日文' },
+  { code: 'ko', name: '韩文' },
+  { code: 'ms', name: '马来语' },
+  { code: 'pt', name: '葡萄牙语' },
+  { code: 'ru', name: '俄语' },
+  { code: 'es', name: '西班牙语' },
+  { code: 'th', name: '泰语' },
+  { code: 'tr', name: '土耳其语' },
+  { code: 'ur', name: '乌尔都语' },
+  { code: 'vi', name: '越南语' },
+];
+
+// Lite 额外支持的语种（用于 sourceLang）
+const LITE_EXTRA = [
+  { code: 'ko', name: '韩文' },
+  { code: 'vi', name: '越南语' },
+  { code: 'th', name: '泰语' },
+  { code: 'ms', name: '马来语' },
+  { code: 'tl', name: '菲律宾语' },
+  { code: 'fil', name: '菲律宾语' },
+  { code: 'ar', name: '阿拉伯语' },
+  { code: 'hi', name: '印地语' },
+  { code: 'bg', name: '保加利亚语' },
+  { code: 'hr', name: '克罗地亚语' },
+  { code: 'cs', name: '捷克语' },
+  { code: 'da', name: '丹麦语' },
+  { code: 'nl', name: '荷兰语' },
+  { code: 'et', name: '爱沙尼亚语' },
+  { code: 'fi', name: '芬兰语' },
+  { code: 'el', name: '希腊语' },
+  { code: 'hu', name: '匈牙利语' },
+  { code: 'ga', name: '爱尔兰语' },
+  { code: 'lv', name: '拉脱维亚语' },
+  { code: 'lt', name: '立陶宛语' },
+  { code: 'mt', name: '马耳他语' },
+  { code: 'pl', name: '波兰语' },
+  { code: 'pt', name: '葡萄牙语' },
+  { code: 'ro', name: '罗马尼亚语' },
+  { code: 'sk', name: '斯洛伐克语' },
+  { code: 'sl', name: '斯洛文尼亚语' },
+  { code: 'sv', name: '瑞典语' },
+  { code: 'en', name: '英文' },
+  { code: 'zh', name: '中文' },
+  { code: 'ja', name: '日文' },
+];
+
+// ============ 初始化语言下拉框 ============
+function populateSourceLang() {
+  const model = document.getElementById('modelSelect').value;
+  const sel = document.getElementById('sourceLang');
+  sel.innerHTML = '<option value="">自动检测</option>';
+
+  if (model.includes('lite')) {
+    LITE_EXTRA.forEach(l => {
+      sel.innerHTML += `<option value="${l.code}">${l.name}（${l.code}）</option>`;
+    });
+  } else {
+    ALL_LANGUAGES.forEach(l => {
+      sel.innerHTML += `<option value="${l.code}">${l.name}（${l.code}）</option>`;
+    });
+  }
+}
+
+function populateTargetLang() {
+  const sel = document.getElementById('targetLang');
+  sel.innerHTML = '<option value="">不翻译</option>';
+  ALL_LANGUAGES.forEach(l => {
+    sel.innerHTML += `<option value="${l.code}">${l.name}（${l.code}）</option>`;
+  });
+}
+
+populateSourceLang();
+populateTargetLang();
+
+// ============ 模型切换 ============
+function onModelChange() {
+  const model = document.getElementById('modelSelect').value;
+  const isPro = model.includes('pro');
+  const isDeep = model.includes('deepthink');
+  const supportsTrans = isPro || isDeep;
+  const isLite = model.includes('lite');
+
+  const targetLang = document.getElementById('targetLang');
+  const transTag = document.getElementById('transTag');
+  const modelHint = document.getElementById('modelHint');
+
+  targetLang.disabled = !supportsTrans;
+  if (!supportsTrans) {
+    targetLang.value = '';
+    transTag.className = 'tag tag-no';
+    transTag.textContent = '不可用';
+  } else {
+    transTag.className = 'tag tag-yes';
+    transTag.textContent = '已启用';
+  }
+
+  if (isLite) {
+    modelHint.innerHTML = '<span class="tag tag-no">不支持翻译</span> <span class="tag tag-no">不支持流式</span> 仅轻量识别';
+  } else if (model.includes('standard')) {
+    modelHint.innerHTML = '<span class="tag tag-no">不支持翻译</span> 支持时间戳、标点、说话人分离';
+  } else if (isPro) {
+    modelHint.innerHTML = '<span class="tag tag-yes">支持翻译</span> 全功能：说话人分离 + 时间戳 + 翻译';
+  } else if (isDeep) {
+    modelHint.innerHTML = '<span class="tag tag-yes">支持翻译</span> 深度理解 + 流式翻译';
+  }
+
+  populateSourceLang();
+  updateSubmitBtn();
+}
+
+// ============ 文件上传 ============
+const fileInput = document.getElementById('fileInput');
+const fileZone = document.getElementById('fileZone');
+const fileInfo = document.getElementById('fileInfo');
+
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) { fileInfo.classList.add('hidden'); return; }
+  fileInfo.classList.remove('hidden');
+  fileInfo.innerHTML = `
+    ✅ ${file.name} (${(file.size/1024).toFixed(1)} KB)
+    <span class="remove-file" onclick="removeFile(event)">✕ 移除</span>
+  `;
+  // 清除录音
+  clearRecording();
+  updateSubmitBtn();
+});
+
+function removeFile(e) {
+  e.stopPropagation();
+  fileInput.value = '';
+  fileInfo.classList.add('hidden');
+  updateSubmitBtn();
+}
+
+// ============ 录音 ============
+let mediaRecorder = null;
+let audioChunks = [];
+let recordBlob = null;
+let recordStartTime = 0;
+
+async function toggleRecording() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    stopRecording();
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
+
+    mediaRecorder.onstop = () => {
+      recordBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      const url = URL.createObjectURL(recordBlob);
+      const preview = document.getElementById('recordPreview');
+      preview.classList.remove('hidden');
+      preview.src = url;
+      document.getElementById('recordLabel').textContent = '重新录音';
+      document.getElementById('recordHint').textContent =
+        `已录制 ${((Date.now() - recordStartTime)/1000).toFixed(1)} 秒，点击重新录制`;
+      updateSubmitBtn();
+    };
+
+    mediaRecorder.start();
+    recordStartTime = Date.now();
+    document.getElementById('recordZone').classList.add('recording');
+    document.getElementById('recordLabel').textContent = '录音中，点击停止';
+    document.getElementById('recordHint').textContent = '...';
+
+    // 清除文件
+    fileInput.value = '';
+    fileInfo.classList.add('hidden');
+    updateSubmitBtn();
+
+    // 60秒自动停止
+    setTimeout(() => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') stopRecording();
+    }, 60000);
+
+  } catch (err) {
+    alert('无法访问麦克风：' + err.message);
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+  }
+  document.getElementById('recordZone').classList.remove('recording');
+}
+
+function clearRecording() {
+  recordBlob = null;
+  document.getElementById('recordZone').classList.remove('recording');
+  document.getElementById('recordLabel').textContent = '点击录音';
+  document.getElementById('recordHint').textContent = '最长 60 秒';
+  document.getElementById('recordPreview').classList.add('hidden');
+  if (mediaRecorder && mediaRecorder.stream) {
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+  }
+  mediaRecorder = null;
+  audioChunks = [];
+}
+
+// ============ API Key ============
+let keyVisible = false;
+function toggleKey() {
+  keyVisible = !keyVisible;
+  const inp = document.getElementById('apiKey');
+  const btn = document.getElementById('toggleKeyBtn');
+  inp.type = keyVisible ? 'text' : 'password';
+  btn.textContent = keyVisible ? '隐藏' : '显示';
+}
+
+// ============ 提交按钮状态 ============
+function updateSubmitBtn() {
+  const hasFile = fileInput.files.length > 0;
+  const hasRecord = recordBlob !== null;
+  const hasApiKey = document.getElementById('apiKey').value.trim().length > 0;
+  document.getElementById('submitBtn').disabled = !((hasFile || hasRecord) && hasApiKey);
+}
+
+document.getElementById('apiKey').addEventListener('input', updateSubmitBtn);
+
+// ============ 提交识别 ============
+async function submitTranscription() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const model = document.getElementById('modelSelect').value;
+  const sourceLang = document.getElementById('sourceLang').value;
+  const targetLang = document.getElementById('targetLang').value;
+  const outputBox = document.getElementById('outputBox');
+  const errorMsg = document.getElementById('errorMsg');
+  const latencyBar = document.getElementById('latencyBar');
+  const submitBtn = document.getElementById('submitBtn');
+
+  // 隐藏之前的错误和结果
+  errorMsg.classList.add('hidden');
+  latencyBar.classList.add('hidden');
+  outputBox.value = '正在识别...';
+
+  // 构建 FormData
+  const formData = new FormData();
+
+  if (fileInput.files.length > 0) {
+    formData.append('file', fileInput.files[0]);
+  } else if (recordBlob) {
+    formData.append('file', recordBlob, 'recording.webm');
+  } else {
+    errorMsg.classList.remove('hidden');
+    errorMsg.textContent = '请先选择音频文件或录音';
+    return;
+  }
+
+  formData.append('model', model);
+  formData.append('response_format', 'verbose_json');
+
+  if (sourceLang) formData.append('language', sourceLang);
+  if (targetLang) formData.append('target_language', targetLang);
+
+  // 按钮 loading
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<span class="loading-spinner"></span> 识别中...';
+
+  const startTime = performance.now();
+
+  try {
+    const resp = await fetch('https://api.senseaudio.cn/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+      body: formData
+    });
+
+    const endTime = performance.now();
+    const latency = Math.round(endTime - startTime);
+
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      showError(data.message || `HTTP ${resp.status}: 请求失败`);
+    } else {
+      // 提取识别 / 翻译文本
+      let text = data.text || '';
+
+      // 如果有翻译结果（verbose_json 的 segments）
+      if (data.segments && data.segments.length > 0) {
+        const seg = data.segments[0];
+        if (seg.translation) {
+          text += '\n\n--- 翻译结果 ---\n' + seg.translation;
+        }
+      }
+
+      outputBox.value = text || '(空结果)';
+      showLatency(latency, data.duration);
+    }
+  } catch (err) {
+    showError('网络请求失败：' + err.message + 
+      '\n可能原因：API 不支持浏览器跨域请求，请使用后端代理或浏览器插件绕过 CORS。');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '开始识别';
+    updateSubmitBtn();
+  }
+}
+
+function showError(msg) {
+  const errorMsg = document.getElementById('errorMsg');
+  errorMsg.classList.remove('hidden');
+  errorMsg.textContent = msg;
+  document.getElementById('outputBox').value = '';
+  document.getElementById('latencyBar').classList.add('hidden');
+}
+
+function showLatency(latencyMs, audioDuration) {
+  const bar = document.getElementById('latencyBar');
+  const val = document.getElementById('latencyValue');
+  const detail = document.getElementById('latencyDetail');
+
+  bar.classList.remove('hidden');
+  val.textContent = latencyMs + ' ms';
+  val.className = 'latency-value';
+  if (latencyMs < 2000) val.classList.add('latency-good');
+  else if (latencyMs < 5000) val.classList.add('latency-warn');
+  else val.classList.add('latency-slow');
+
+  detail.textContent = audioDuration
+    ? `音频时长 ${audioDuration.toFixed(1)}s | 总请求耗时`
+    : '总请求耗时（含网络传输）';
+}
+
+function copyOutput() {
+  const text = document.getElementById('outputBox').value;
+  navigator.clipboard.writeText(text).then(() => {
+    alert('已复制到剪贴板');
+  });
+}
+
+function clearOutput() {
+  document.getElementById('outputBox').value = '';
+  document.getElementById('latencyBar').classList.add('hidden');
+  document.getElementById('errorMsg').classList.add('hidden');
+}
+</script>
+</body>
+</html>

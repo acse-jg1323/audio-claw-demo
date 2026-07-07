@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AudioClaw · 声纹库</title>
+<style>
+  :root {
+    --bg-app: #F7F7F8;
+    --bg-card: #FFFFFF;
+    --bg-subtle: #F2F3F5;
+    --bg-hover: #F0F1F3;
+    --border-default: #E5E7EB;
+    --border-strong: #D1D5DB;
+    --text-primary: #111827;
+    --text-secondary: #4B5563;
+    --text-tertiary: #9CA3AF;
+    --accent-primary: #2563EB;
+    --accent-primary-hover: #1D4ED8;
+    --accent-soft: #EFF6FF;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+
+    --speaker-1: #3B82F6;
+    --speaker-2: #8B5CF6;
+    --speaker-3: #10B981;
+    --speaker-4: #F59E0B;
+    --speaker-5: #EC4899;
+    --speaker-6: #06B6D4;
+
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --shadow-sm: 0 1px 2px rgba(16,24,40,.04);
+    --shadow-md: 0 4px 12px rgba(16,24,40,.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+      "PingFang SC", "Hiragino Sans GB", "Hiragino Sans", "Yu Gothic", "Microsoft YaHei",
+      "Noto Sans CJK SC", "Noto Sans JP", sans-serif;
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--bg-app);
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, textarea, select { font-family: inherit; }
+  a { color: inherit; text-decoration: none; }
+
+  .app {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ============ 左侧导航 ============ */
+  .sidebar {
+    background: var(--bg-card);
+    border-right: 1px solid var(--border-default);
+    display: flex;
+    flex-direction: column;
+    padding: 14px 12px 12px;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 4px 8px 14px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border-default);
+  }
+  .brand-logo {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #2563EB 0%, #8B5CF6 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 13px;
+  }
+  .brand-name { font-weight: 600; font-size: 15px; }
+
+  .new-meeting-btn {
+    margin: 6px 4px 16px;
+    padding: 10px 14px;
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, .3);
+  }
+  .new-meeting-btn:hover { background: var(--accent-primary-hover); }
+
+  .nav-section { margin-bottom: 14px; }
+  .nav-title {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 4px 8px 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    margin-bottom: 1px;
+    font-size: 13px;
+  }
+  .nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .nav-item.active {
+    background: var(--accent-soft);
+    color: var(--accent-primary);
+    font-weight: 600;
+  }
+  .nav-item svg { flex-shrink: 0; }
+  .nav-count {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    background: var(--bg-subtle);
+    padding: 1px 7px;
+    border-radius: 10px;
+  }
+  .nav-item.active .nav-count { background: white; color: var(--accent-primary); }
+  .admin-badge {
+    margin-left: auto;
+    font-size: 9px;
+    color: white;
+    background: var(--warning);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: .03em;
+  }
+
+  .sidebar-bottom { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border-default); }
+  .user-card {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .user-card:hover { background: var(--bg-hover); }
+  .user-avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366F1, #8B5CF6);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 13px;
+  }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 13px; font-weight: 500; }
+  .user-plan { font-size: 11px; color: var(--text-tertiary); }
+
+  /* ============ 主区 ============ */
+  .main {
+    overflow-y: auto;
+    background: var(--bg-app);
+  }
+  .main::-webkit-scrollbar { width: 8px; }
+  .main::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border-default);
+    background: rgba(247, 247, 248, .8);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .page-title-row { display: flex; flex-direction: column; gap: 2px; }
+  .page-title { font-size: 20px; font-weight: 700; display:flex; align-items:center; gap:8px; }
+  .page-sub { font-size: 12px; color: var(--text-tertiary); }
+  .top-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+  .content { padding: 24px 28px 80px; max-width: 980px; }
+
+  /* 按钮 */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+  .btn.primary { background: var(--accent-primary); border-color: var(--accent-primary); color: white; }
+  .btn.primary:hover { background: var(--accent-primary-hover); }
+  .btn.sm { padding: 5px 10px; font-size: 12px; }
+  .btn.danger { color: var(--danger); border-color: rgba(239,68,68,.3); }
+  .btn.danger:hover { background: rgba(239,68,68,.06); }
+  .btn.ghost { background: transparent; border-color: transparent; }
+  .btn.ghost:hover { background: var(--bg-hover); }
+
+  /* ============ 隐私合规横幅 ============ */
+  .privacy-banner {
+    background: linear-gradient(135deg, #EFF6FF 0%, #F5F3FF 100%);
+    border: 1px solid #DBEAFE;
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .privacy-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: white;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent-primary);
+    flex-shrink: 0;
+    box-shadow: var(--shadow-sm);
+  }
+  .privacy-body { flex: 1; }
+  .privacy-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .privacy-points {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+  .privacy-point {
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+  }
+  .privacy-point::before {
+    content: '✓';
+    color: var(--success);
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .privacy-foot {
+    margin-top: 10px;
+    font-size: 12px;
+  }
+  .privacy-foot a {
+    color: var(--accent-primary);
+    text-decoration: underline;
+  }
+
+  /* ============ 搜索 ============ */
+  .search-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .search-row h2 {
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .count-pill {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    background: var(--bg-subtle);
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .search-box {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    width: 240px;
+  }
+  .search-box input {
+    flex: 1; border: none; outline: none;
+    background: transparent; font-size: 13px;
+  }
+
+  /* ============ 声纹列表 ============ */
+  .voice-list {
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  .voice-row {
+    display: grid;
+    grid-template-columns: 44px 1fr auto auto auto;
+    gap: 14px;
+    align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-default);
+    transition: background .12s;
+  }
+  .voice-row:last-child { border-bottom: none; }
+  .voice-row:hover { background: var(--bg-subtle); }
+  .voice-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .voice-info { min-width: 0; }
+  .voice-name {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 2px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .voice-role {
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+  .voice-me-tag {
+    padding: 1px 6px;
+    background: var(--accent-soft);
+    color: var(--accent-primary);
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+  }
+
+  .voice-status {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--success);
+  }
+  .voice-storage {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px;
+    background: var(--bg-subtle);
+    border-radius: 999px;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .voice-storage svg { color: var(--success); }
+
+  .voice-actions {
+    display: flex; gap: 2px;
+  }
+  .icon-btn {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .icon-btn.danger:hover { background: rgba(239,68,68,.08); color: var(--danger); }
+
+  /* ============ 简单设置块 ============ */
+  .setting-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .setting-card-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-default);
+  }
+  .setting-card-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-default);
+  }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-label { font-size: 13px; font-weight: 500; }
+  .setting-hint { font-size: 12px; color: var(--text-tertiary); margin-top: 3px; line-height: 1.5; }
+
+  .switch {
+    position: relative;
+    width: 38px; height: 22px;
+    background: var(--border-strong);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background .15s;
+    flex-shrink: 0;
+  }
+  .switch::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 18px; height: 18px;
+    background: white;
+    border-radius: 50%;
+    transition: transform .2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  }
+  .switch.on { background: var(--accent-primary); }
+  .switch.on::after { transform: translateX(16px); }
+
+  /* ============ 数据权利区 ============ */
+  .data-rights {
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .data-rights h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .data-rights p {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 14px;
+    line-height: 1.55;
+  }
+  .data-rights .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* ============ 添加声纹对话框（模拟，可见） ============ */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, .55);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 25px 80px rgba(0,0,0,.3);
+    overflow: hidden;
+  }
+  .modal-header {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border-default);
+  }
+  .modal-header h2 { font-size: 16px; font-weight: 700; }
+  .modal-header p { font-size: 12px; color: var(--text-tertiary); margin-top: 3px; }
+  .modal-body { padding: 18px 22px; }
+  .form-field { margin-bottom: 14px; }
+  .form-field label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 500; }
+  .form-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .form-input:focus { border-color: var(--accent-primary); }
+
+  .upload-zone {
+    border: 1.5px dashed var(--border-strong);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .15s;
+    color: var(--text-tertiary);
+  }
+  .upload-zone:hover {
+    border-color: var(--accent-primary);
+    background: var(--accent-soft);
+    color: var(--accent-primary);
+  }
+  .upload-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--bg-subtle);
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 8px;
+  }
+  .upload-zone .main-text { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 3px; }
+  .upload-zone .sub-text { font-size: 11px; }
+
+  /* 同意 */
+  .consent-block {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    border-radius: 10px;
+  }
+  .consent-row {
+    display: flex; gap: 10px;
+    align-items: flex-start;
+    cursor: pointer;
+  }
+  .consent-row + .consent-row { margin-top: 8px; }
+  .check {
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    background: white;
+    position: relative;
+    transition: all .15s;
+  }
+  .check.checked {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+  }
+  .check.checked::after {
+    content: '';
+    position: absolute;
+    left: 4px; top: 1px;
+    width: 5px; height: 9px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  .consent-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .consent-text strong { color: var(--text-primary); }
+
+  .modal-footer {
+    padding: 14px 22px;
+    border-top: 1px solid var(--border-default);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    background: var(--bg-subtle);
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ 左侧导航 ============ -->
+  <nav class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">AC</div>
+      <div class="brand-name">AudioClaw</div>
+    </div>
+
+    <button class="new-meeting-btn" onclick="location.href='index.html'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <span>开始新会议</span>
+    </button>
+
+    <div class="nav-section">
+      <div class="nav-title">主导航</div>
+      <div class="nav-item" onclick="location.href='home.html'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>我的会议</span>
+        <span class="nav-count">42</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-title">资产库</div>
+      <div class="nav-item active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+        <span>声纹库</span>
+        <span class="nav-count">6</span>
+      </div>
+      <div class="nav-item" onclick="location.href='terms.html'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <span>术语热词库</span>
+        <span class="nav-count">87</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-title">组织</div>
+      <div class="nav-item" onclick="location.href='admin.html'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+        <span>组织管理</span>
+        <span class="admin-badge">管理员</span>
+      </div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="nav-item" onclick="location.href='settings.html'" style="margin-bottom:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>设置</span>
+      </div>
+      <div class="user-card">
+        <div class="user-avatar">李</div>
+        <div class="user-info">
+          <div class="user-name">李明</div>
+          <div class="user-plan">管理员 · 神泉科技</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-tertiary)"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============ 主区 ============ -->
+  <main class="main">
+
+    <div class="top-bar">
+      <div class="page-title-row">
+        <div class="page-title">
+          声纹库
+          <span style="font-size:11px;color:var(--success);background:#D1FAE5;padding:2px 8px;border-radius:999px;font-weight:500;display:inline-flex;align-items:center;gap:4px">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            端到端加密
+          </span>
+        </div>
+        <div class="page-sub">用于会议中自动识别说话人身份 · 共 6 位</div>
+      </div>
+      <div class="top-actions">
+        <button class="btn primary" onclick="openModal()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          添加声纹
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- 隐私合规告知 -->
+      <div class="privacy-banner">
+        <div class="privacy-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="privacy-body">
+          <div class="privacy-title">声纹属于敏感生物特征数据，我们这样保护它</div>
+          <div class="privacy-points">
+            <div class="privacy-point">声纹数据全程端到端加密传输与存储，仅用于会议中的说话人识别，不用于模型训练。</div>
+            <div class="privacy-point">添加他人声纹前，需确认已获得本人明确同意。</div>
+          </div>
+          <div class="privacy-foot">
+            <a href="#">查看完整隐私政策 →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 列表 -->
+      <div class="search-row">
+        <h2>声纹列表</h2>
+        <span class="count-pill">6 位</span>
+        <div class="search-box">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-tertiary)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="按姓名搜索…">
+        </div>
+      </div>
+
+      <div class="voice-list">
+
+        <div class="voice-row">
+          <div class="voice-avatar" style="background:var(--speaker-1)">李</div>
+          <div class="voice-info">
+            <div class="voice-name">
+              李明
+              <span class="voice-me-tag">我</span>
+            </div>
+            <div class="voice-role">销售总监 · 神泉科技</div>
+          </div>
+          <div class="voice-status">
+            <span class="status-dot"></span>
+            <span>已采集</span>
+          </div>
+          <div class="voice-storage">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            已加密
+          </div>
+          <div class="voice-actions">
+            <button class="icon-btn" title="编辑">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="icon-btn danger" title="删除">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="voice-row">
+          <div class="voice-avatar" style="background:var(--speaker-3)">王</div>
+          <div class="voice-info">
+            <div class="voice-name">王芳</div>
+            <div class="voice-role">产品经理 · 神泉科技</div>
+          </div>
+          <div class="voice-status">
+            <span class="status-dot"></span>
+            <span>已采集</span>
+          </div>
+          <div class="voice-storage">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            已加密
+          </div>
+          <div class="voice-actions">
+            <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+            <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+          </div>
+        </div>
+
+        <div class="voice-row">
+          <div class="voice-avatar" style="background:var(--speaker-5)">陈</div>
+          <div class="voice-info">
+            <div class="voice-name">陈志远</div>
+            <div class="voice-role">研发副总 · 神泉科技</div>
+          </div>
+          <div class="voice-status">
+            <span class="status-dot"></span>
+            <span>已采集</span>
+          </div>
+          <div class="voice-storage">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            已加密
+          </div>
+          <div class="voice-actions">
+            <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+            <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+          </div>
+        </div>
+
+        <div class="voice-row">
+          <div class="voice-avatar" style="background:var(--speaker-2)">田</div>
+          <div class="voice-info">
+            <div class="voice-name">田中 健太</div>
+            <div class="voice-role">CTO · 株式会社サンライズ</div>
+          </div>
+          <div class="voice-status">
+            <span class="status-dot"></span>
+            <span>已采集</span>
+          </div>
+          <div class="voice-storage">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            已加密
+          </div>
+          <div class="voice-actions">
+            <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+            <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+          </div>
+        </div>
+
+        <div class="voice-row">
+          <div class="voice-avatar" style="background:var(--speaker-4)">佐</div>
+          <div class="voice-info">
+            <div class="voice-name">佐藤 美咲</div>
+            <div class="voice-role">产品总监 · サンライズ</div>
+          </div>
+          <div class="voice-status">
+            <span class="status-dot"></span>
+            <span>已采集</span>
+          </div>
+          <div class="voice-storage">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            已加密
+          </div>
+          <div class="voice-actions">
+            <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+            <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+          </div>
+        </div>
+
+        <div class="voice-row">
+          <div class="voice-avatar" style="background:var(--speaker-6)">高</div>
+          <div class="voice-info">
+            <div class="voice-name">高律师</div>
+            <div class="voice-role">法务顾问 · 神泉科技</div>
+          </div>
+          <div class="voice-status">
+            <span class="status-dot"></span>
+            <span>已采集</span>
+          </div>
+          <div class="voice-storage">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            已加密
+          </div>
+          <div class="voice-actions">
+            <button class="icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+            <button class="icon-btn danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 自动匹配设置 -->
+      <div class="setting-card">
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">会议中自动识别匹配</div>
+            <div class="setting-hint">检测到声纹库中已有的说话人时，自动显示对应身份；否则标记为「未识别」</div>
+          </div>
+          <div class="switch on" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+
+      <!-- 数据权利 -->
+      <div class="data-rights">
+        <h3>你的数据权利</h3>
+        <p>你随时拥有完全的控制权。所有声纹数据仅归属于你的账号，不与任何第三方共享，删除即彻底擦除。</p>
+        <div class="btn-group">
+          <button class="btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            导出我的声纹数据
+          </button>
+          <button class="btn danger">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+            清空全部声纹库
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ============ 添加声纹对话框（演示合规设计） ============ -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>添加新声纹</h2>
+      <p>采集 10 秒以上音频样本即可</p>
+    </div>
+    <div class="modal-body">
+      <div class="form-field">
+        <label>姓名</label>
+        <input type="text" class="form-input" placeholder="如：田中 健太">
+      </div>
+      <div class="form-field">
+        <label>角色 / 备注（可选）</label>
+        <input type="text" class="form-input" placeholder="如：CTO · 株式会社サンライズ">
+      </div>
+      <div class="form-field">
+        <label>音频样本</label>
+        <div class="upload-zone">
+          <div class="upload-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+          </div>
+          <div class="main-text">点击录制 10 秒</div>
+          <div class="sub-text">或拖入音频文件 · 也可从已有会议中提取</div>
+        </div>
+      </div>
+
+      <!-- 关键：明确同意区 -->
+      <div class="consent-block">
+        <div class="consent-row" onclick="this.querySelector('.check').classList.toggle('checked')">
+          <div class="check"></div>
+          <div class="consent-text">
+            <strong>我已获得该说话人本人的明确同意</strong>采集其声纹用于身份识别。
+          </div>
+        </div>
+        <div class="consent-row" onclick="this.querySelector('.check').classList.toggle('checked')">
+          <div class="check"></div>
+          <div class="consent-text">
+            我了解声纹将以<strong>端到端加密方式存储于云端</strong>，并随时可由我导出或删除。
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">取消</button>
+      <button class="btn primary">确认添加</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openModal() {
+    document.getElementById('addModal').classList.add('active');
+  }
+  function closeModal() {
+    document.getElementById('addModal').classList.remove('active');
+  }
+  document.getElementById('addModal').addEventListener('click', e => {
+    if (e.target.id === 'addModal') closeModal();
+  });
+</script>
+</body>
+</html>

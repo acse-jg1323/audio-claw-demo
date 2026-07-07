@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title>SenseAudio 流式翻译验证</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 16px; }
+    input, select, button, textarea { font-size: 14px; padding: 6px 8px; }
+    input[type=password] { width: 360px; }
+    .row { margin-bottom: 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    label { min-width: 96px; }
+    #log { white-space: pre-wrap; background: #0d1117; color: #c9d1d9; padding: 12px; border-radius: 6px; min-height: 200px; font-family: ui-monospace, monospace; font-size: 13px; }
+    .ok { color: #3fb950; } .err { color: #f85149; } .info { color: #58a6ff; }
+  </style>
+</head>
+<body>
+  <h2>SenseAudio 流式翻译验证</h2>
+  <div class="row">
+    <label>API Key</label>
+    <input id="key" type="password" placeholder="sk-..." />
+  </div>
+  <div class="row">
+    <label>模型</label>
+    <select id="model">
+      <option value="senseaudio-s2-lite">senseaudio-s2-lite</option>
+      <option value="senseaudio-s2">senseaudio-s2</option>
+      <option value="senseaudio-s2-flash">senseaudio-s2-flash</option>
+    </select>
+    <label style="min-width:auto">译文</label>
+    <input id="text" value="Hello everyone, let's start the meeting." style="flex:1; min-width:240px" />
+  </div>
+  <div class="row">
+    <button id="run">发起流式请求 (stream:true)</button>
+    <button id="runNon">对照：非流式</button>
+  </div>
+  <div id="log">等待…</div>
+
+  <script>
+    const API_URL = "https://api.senseaudio.cn/v1/chat/completions";
+    const logEl = document.getElementById("log");
+    function log(msg, cls) {
+      const span = document.createElement("span");
+      if (cls) span.className = cls;
+      span.textContent = msg + "\n";
+      logEl.appendChild(span);
+    }
+    function clearLog() { logEl.textContent = ""; }
+
+    function buildBody(model, text, stream) {
+      return {
+        model,
+        temperature: 0,
+        stream,
+        messages: [
+          { role: "system", content: "你是一个会议实时翻译器。请将用户提供的文本准确翻译为中文。仅输出译文。" },
+          { role: "user", content: text },
+        ],
+      };
+    }
+
+    document.getElementById("run").addEventListener("click", async () => {
+      clearLog();
+      const key = document.getElementById("key").value.trim();
+      const model = document.getElementById("model").value;
+      const text = document.getElementById("text").value;
+      if (!key) { log("请先填 API Key", "err"); return; }
+
+      log(`[stream:true] 发起请求，model=${model}`, "info");
+      const t0 = performance.now();
+      let firstByteAt = null, firstTokenAt = null, chunkCount = 0, assembled = "";
+
+      try {
+        const resp = await fetch(API_URL, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+          body: JSON.stringify(buildBody(model, text, true)),
+        });
+
+        const ctype = resp.headers.get("content-type") || "";
+        log(`HTTP ${resp.status}  content-type: ${ctype}`, resp.ok ? "ok" : "err");
+
+        if (!resp.ok) {
+          const errText = await resp.text();
+          log("响应体: " + errText, "err");
+          log("结论：该请求失败，可能不支持 stream 或 key/model 有问题。", "err");
+          return;
+        }
+
+        // 如果不是 SSE，而是普通 JSON，说明后端忽略了 stream 参数
+        if (!ctype.includes("text/event-stream")) {
+          const body = await resp.text();
+          log("⚠️ content-type 不是 text/event-stream，后端可能忽略了 stream 参数，返回了整包 JSON：", "err");
+          log(body.slice(0, 800), "");
+          log("结论：不支持真正的流式（或需要别的参数）。", "err");
+          return;
+        }
+
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (firstByteAt === null) {
+            firstByteAt = performance.now();
+            log(`首字节: ${(firstByteAt - t0).toFixed(0)}ms`, "info");
+          }
+          buffer += decoder.decode(value, { stream: true });
+
+          let idx;
+          while ((idx = buffer.indexOf("\n")) >= 0) {
+            const line = buffer.slice(0, idx).trim();
+            buffer = buffer.slice(idx + 1);
+            if (!line.startsWith("data:")) continue;
+            const data = line.slice(5).trim();
+            if (data === "[DONE]") { log("收到 [DONE]", "ok"); continue; }
+            chunkCount++;
+            try {
+              const json = JSON.parse(data);
+              const delta = json?.choices?.[0]?.delta?.content ?? "";
+              if (delta) {
+                if (firstTokenAt === null) {
+                  firstTokenAt = performance.now();
+                  log(`首个 token: ${(firstTokenAt - t0).toFixed(0)}ms`, "info");
+                }
+                assembled += delta;
+              }
+            } catch (e) {
+              log("解析分块失败: " + data.slice(0, 120), "err");
+            }
+          }
+        }
+
+        const total = performance.now() - t0;
+        log(`\n收到 ${chunkCount} 个分块，总耗时 ${total.toFixed(0)}ms`, "ok");
+        log("拼接译文: " + assembled, "ok");
+        if (chunkCount > 1) {
+          log("\n✅ 结论：支持流式（多个分块逐步到达），修复二可行。", "ok");
+        } else {
+          log("\n⚠️ 只有 1 个分块，可能后端把整句一次性吐出，流式收益有限。", "err");
+        }
+      } catch (e) {
+        log("请求异常: " + (e?.message || e), "err");
+      }
+    });
+
+    document.getElementById("runNon").addEventListener("click", async () => {
+      clearLog();
+      const key = document.getElementById("key").value.trim();
+      const model = document.getElementById("model").value;
+      const text = document.getElementById("text").value;
+      if (!key) { log("请先填 API Key", "err"); return; }
+      log(`[非流式对照] model=${model}`, "info");
+      const t0 = performance.now();
+      try {
+        const resp = await fetch(API_URL, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+          body: JSON.stringify(buildBody(model, text, false)),
+        });
+        const total = performance.now() - t0;
+        const body = await resp.json();
+        log(`HTTP ${resp.status}  整句耗时 ${total.toFixed(0)}ms`, resp.ok ? "ok" : "err");
+        log("译文: " + (body?.choices?.[0]?.message?.content ?? JSON.stringify(body).slice(0, 400)), "");
+      } catch (e) {
+        log("请求异常: " + (e?.message || e), "err");
+      }
+    });
+  </script>
+</body>
+</html>

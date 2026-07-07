@@ -4,7 +4,3 @@
 node_modules/
 *.log
 
-# 声纹/导出大模型（不入库，本地或单独分发）
-app/models/
-models/
-*.onnx
